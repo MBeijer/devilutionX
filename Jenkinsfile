@@ -243,6 +243,7 @@ node('master') {
 	def fixed_job_name = env.JOB_NAME.replace('%2F','/')
 	slackSend color: "good", channel: "#jenkins", message: "Build Started: ${fixed_job_name} #${env.BUILD_NUMBER} (<${env.BUILD_URL}|Open>)"
 	parallel (
+		/*
 		'Win32': {
 			node {			
 				buildStep('dockcross/windows-static-x86:latest', 'Unix Makefiles', 'Windows x86', '')
@@ -267,12 +268,11 @@ node('master') {
 			node {
 				buildStep('desertbit/crossbuild:linux-armv7', 'Unix Makefiles', 'Linux RasPi', '')
 			}
-		}
-		/*,
+		},*/
 		'WebASM': {
 			node {			
 				buildStep('dockcross/web-wasm:latest', 'Unix Makefiles', 'Web assembly', '')
 			}
-		}*/
+		}
     )
 }
