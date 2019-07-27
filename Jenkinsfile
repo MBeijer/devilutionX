@@ -102,7 +102,7 @@ def build_libpng(TARGET, SYSROOT) {
 
 	def ZLIB_FILE = ""
 	if (SYSROOT.contains('emsdk')) {
-		ZLIB_FILE = "-DZLIB_LIBRARY:FILEPATH=${SYSROOT}/lib/libz.a -DPNG_SHARED=OFF"
+		ZLIB_FILE = "-DZLIB_LIBRARY:FILEPATH=${SYSROOT}/lib/libz.a -DPNG_SHARED=OFF -DPNG_BUILD_ZLIB=ON -DM_LIBRARY=\"\""
 	}
 	else {
 		ZLIB_FILE = ""
