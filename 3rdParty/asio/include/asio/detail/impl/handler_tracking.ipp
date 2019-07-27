@@ -322,15 +322,18 @@ void handler_tracking::reactor_operation(
 void handler_tracking::write_line(const char* format, ...)
 {
   using namespace std; // For sprintf (or equivalent).
-
+#ifndef __EMSCRIPTEN__
   va_list args;
+#else
+  int* args;
+#endif
   va_start(args, format);
 
   char line[256] = "";
 #if defined(ASIO_HAS_SECURE_RTL)
-  int length = vsprintf_s(line, sizeof(line), format, args);
+  int length = vsprintf_s(line, sizeof(line), format, (va_list)args);
 #else // defined(ASIO_HAS_SECURE_RTL)
-  int length = vsprintf(line, format, args);
+  int length = vsprintf(line, format, (va_list)args);
 #endif // defined(ASIO_HAS_SECURE_RTL)
 
   va_end(args);
