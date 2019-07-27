@@ -100,11 +100,19 @@ def build_sdl2_mixer(TARGET, SYSROOT) {
 def build_libpng(TARGET, SYSROOT) {
 	echo "============= Build libpng ============="
 
+	def ZLIB_FILE = ""
+	if (SYSROOT.contains('emsdk')) {
+		ZLIB_FILE = "-DZLIB_LIBRARY:FILEPATH=${SYSROOT}/lib/libz.a"
+	}
+	else {
+		ZLIB_FILE = ""
+	}
+
 	dir("libpng-1.6.36") {
 		sh "mkdir -p build"
 		sh "sudo rm -rfv build/*"
 
-		sh "cd build && cmake .. -DCMAKE_INSTALL_LIBDIR=${SYSROOT}/lib -DCMAKE_INSTALL_INCLUDEDIR=${SYSROOT}/include -DCMAKE_INSTALL_PREFIX=${SYSROOT}"
+		sh "cd build && cmake .. -DCMAKE_INSTALL_LIBDIR=${SYSROOT}/lib -DCMAKE_INSTALL_INCLUDEDIR=${SYSROOT}/include -DCMAKE_INSTALL_PREFIX=${SYSROOT} ${ZLIB_FILE}"
 		sh "cd build && cmake --build . --config Release --target install -- -j8"
 	}
 }
