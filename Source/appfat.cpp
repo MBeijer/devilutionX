@@ -454,12 +454,7 @@ char *TraceLastError()
 
 void __cdecl app_fatal(const char *pszFmt, ...)
 {
-
-#ifndef __EMSCRIPTEN__
 	va_list va;
-#else
-	int* va;
-#endif
 
 	va_start(va, pszFmt);
 	FreeDlg();
@@ -468,7 +463,7 @@ void __cdecl app_fatal(const char *pszFmt, ...)
 #endif
 
 	if (pszFmt)
-		MsgBox(pszFmt, (va_list)va);
+		MsgBox(pszFmt, va);
 
 	va_end(va);
 
@@ -508,13 +503,10 @@ void FreeDlg()
 void __cdecl DrawDlg(char *pszFmt, ...)
 {
 	char text[256];
-#ifndef __EMSCRIPTEN__
 	va_list arglist;
-#else
-	int* arglist;
-#endif
+
 	va_start(arglist, pszFmt);
-	wvsprintf(text, pszFmt, (va_list)arglist);
+	wvsprintf(text, pszFmt, arglist);
 	va_end(arglist);
 	SDrawMessageBox(text, "Diablo", MB_TASKMODAL | MB_ICONEXCLAMATION);
 }

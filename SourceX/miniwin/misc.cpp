@@ -55,13 +55,10 @@ char *_strlwr(char *str)
 
 int wsprintfA(LPSTR dest, LPCSTR format, ...)
 {
-#ifndef __EMSCRIPTEN__
 	va_list args;
-#else
-	int* args;
-#endif
+
 	va_start(args, format);
-	return vsprintf(dest, format, (va_list)args);
+	return vsprintf(dest, format, args);
 }
 
 int wvsprintfA(LPSTR dest, LPCSTR format, va_list arglist)

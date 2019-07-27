@@ -125,17 +125,13 @@ void __cdecl log_printf(const char *pszFmt, ...)
 	size_t size;
 	char *pBuffer;
 	char msg[512];
-#ifndef __EMSCRIPTEN__
 	va_list va;
-#else
-	int* va;
-#endif
 
 #ifdef __cplusplus
 	sgMemCrit.Enter();
 #endif
 	va_start(va, pszFmt);
-	_vsnprintf(msg, 0x200, pszFmt, (va_list)va);
+	_vsnprintf(msg, 0x200, pszFmt, va);
 	va_end(va);
 	msg[511] = 0;
 	size = strlen(msg);

@@ -43,11 +43,7 @@ void __cdecl dumphist(const char *pszFmt, ...)
 {
 	static FILE *sgpHistFile = NULL;
 	DWORD dwTicks;
-#ifndef __EMSCRIPTEN__
 	va_list va;
-#else
-	int* va;
-#endif
 
 	va_start(va, pszFmt);
 
@@ -60,7 +56,7 @@ void __cdecl dumphist(const char *pszFmt, ...)
 
 	dwTicks = GetTickCount();
 	fprintf(sgpHistFile, "%4u.%02u  ", (dwTicks - gdwHistTicks) / 1000, (dwTicks - gdwHistTicks) % 1000 / 10);
-	vfprintf(sgpHistFile, pszFmt, (va_list)va);
+	vfprintf(sgpHistFile, pszFmt, va);
 	fprintf(
 	    sgpHistFile,
 	    "\r\n          (%d,%d)(%d,%d)(%d,%d)(%d,%d)\r\n",
