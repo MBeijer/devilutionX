@@ -454,7 +454,12 @@ char *TraceLastError()
 
 void __cdecl app_fatal(const char *pszFmt, ...)
 {
+
+#ifndef __EMSCRIPTEN__
 	va_list va;
+#else
+	int* va;
+#endif
 
 	va_start(va, pszFmt);
 	FreeDlg();
@@ -503,8 +508,11 @@ void FreeDlg()
 void __cdecl DrawDlg(char *pszFmt, ...)
 {
 	char text[256];
+#ifndef __EMSCRIPTEN__
 	va_list arglist;
-
+#else
+	int* arglist;
+#endif
 	va_start(arglist, pszFmt);
 	wvsprintf(text, pszFmt, arglist);
 	va_end(arglist);
