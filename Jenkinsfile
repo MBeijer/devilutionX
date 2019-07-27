@@ -154,7 +154,7 @@ def build_libsodium(TARGET, SYSROOT) {
 
 	def CONF_PARAMS = ""
 	if (SYSROOT.contains('emsdk')) {
-		CONF_PARAMS = "--disable-shared --disable-ssp --disable-asm --disable-pie"
+		CONF_PARAMS = "--disable-shared --disable-ssp --disable-asm --disable-pie --enable-minimal"
 	}
 	else {
 		CONF_PARAMS = "--host=${TARGET} "
@@ -162,7 +162,7 @@ def build_libsodium(TARGET, SYSROOT) {
 
 	dir("libsodium-1.0.17") {
 		sh "./autogen.sh"
-		sh "./configure --prefix=${SYSROOT}"
+		sh "./configure --prefix=${SYSROOT} ${CONF_PARAMS}"
 		sh "make clean"
 		sh "make -j8"
 		sh "make install"
