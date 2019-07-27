@@ -468,7 +468,7 @@ void __cdecl app_fatal(const char *pszFmt, ...)
 #endif
 
 	if (pszFmt)
-		MsgBox(pszFmt, va);
+		MsgBox(pszFmt, (va_list)va);
 
 	va_end(va);
 
@@ -514,7 +514,7 @@ void __cdecl DrawDlg(char *pszFmt, ...)
 	int* arglist;
 #endif
 	va_start(arglist, pszFmt);
-	wvsprintf(text, pszFmt, arglist);
+	wvsprintf(text, pszFmt, (va_list)arglist);
 	va_end(arglist);
 	SDrawMessageBox(text, "Diablo", MB_TASKMODAL | MB_ICONEXCLAMATION);
 }
