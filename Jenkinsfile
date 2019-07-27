@@ -152,9 +152,17 @@ def build_sdl2_ttf(TARGET, SYSROOT) {
 def build_libsodium(TARGET, SYSROOT) {
 	echo "============= Build Libsodium ============="
 
+	def CONF_PARAMS = ""
+	if (SYSROOT.contains('emsdk')) {
+		CONF_PARAMS = "--disable-shared --disable-ssp --disable-asm --disable-pie"
+	}
+	else {
+		CONF_PARAMS = "--host=${TARGET} "
+	}
+
 	dir("libsodium-1.0.17") {
 		sh "./autogen.sh"
-		sh "./configure --host=${TARGET} --prefix=${SYSROOT}"
+		sh "./configure --prefix=${SYSROOT} --enable-minimal"
 		sh "make clean"
 		sh "make -j8"
 		sh "make install"
