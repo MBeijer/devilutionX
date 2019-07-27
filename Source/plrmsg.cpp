@@ -39,14 +39,17 @@ char *ErrorPlrMsg(const char *pszMsg)
 size_t __cdecl EventPlrMsg(const char *pszFmt, ...)
 {
 	_plrmsg *pMsg;
+#ifndef __EMSCRIPTEN__
 	va_list va;
-
+#else
+	int* va;
+#endif
 	va_start(va, pszFmt);
 	pMsg = &plr_msgs[plr_msg_slot];
 	plr_msg_slot = (plr_msg_slot + 1) & (PMSG_COUNT - 1);
 	pMsg->player = MAX_PLRS;
 	pMsg->time = GetTickCount();
-	vsprintf(pMsg->str, pszFmt, va);
+	vsprintf(pMsg->str, pszFmt, (va_list)va);
 	va_end(va);
 	return strlen(pMsg->str);
 }

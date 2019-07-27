@@ -1374,13 +1374,16 @@ void __cdecl msg_errorf(const char *pszFmt, ...)
 	static DWORD msg_err_timer;
 	DWORD ticks;
 	char msg[256];
+#ifndef __EMSCRIPTEN__
 	va_list va;
-
+#else
+	int* va;
+#endif
 	va_start(va, pszFmt);
 	ticks = GetTickCount();
 	if (ticks - msg_err_timer >= 5000) {
 		msg_err_timer = ticks;
-		vsprintf(msg, pszFmt, va);
+		vsprintf(msg, pszFmt, (va_list)va);
 		ErrorPlrMsg(msg);
 	}
 	va_end(va);
