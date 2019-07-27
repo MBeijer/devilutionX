@@ -162,7 +162,7 @@ def build_libsodium(TARGET, SYSROOT) {
 
 	dir("libsodium-1.0.17") {
 		sh "./autogen.sh"
-		sh "./configure --prefix=${SYSROOT} --enable-minimal"
+		sh "./configure --prefix=${SYSROOT}"
 		sh "make clean"
 		sh "make -j8"
 		sh "make install"
