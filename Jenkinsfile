@@ -48,7 +48,7 @@ def get_libs() {
 	sh "curl -O https://www.libsdl.org/projects/SDL_ttf/release/SDL2_ttf-2.0.15.tar.gz"
 	sh "curl -SLO https://download.savannah.gnu.org/releases/freetype/freetype-2.10.1.tar.gz"
 	sh "curl -SLO https://github.com/glennrp/libpng/archive/v1.6.36.tar.gz"
-	sh "curl -SLO https://github.com/jedisct1/libsodium/archive/1.0.17.tar.gz"
+	sh "curl -SLO https://github.com/jedisct1/libsodium/archive/1.0.18.tar.gz"
 	//sh "wget https://raw.githubusercontent.com/Kitware/CMake/v3.10.0/Modules/FindFreetype.cmake -O CMake/FindFreetype.cmake"
 	sh "sudo rm -rfv CMake/FindFreetype.cmake"
 	sh "wget https://raw.githubusercontent.com/Kitware/CMake/v3.10.0/Modules/SelectLibraryConfigurations.cmake -O CMake/SelectLibraryConfigurations.cmake"
@@ -64,7 +64,7 @@ def decompress_libs() {
 	sh "tar -xvf SDL2_ttf-2.0.15.tar.gz"
 	sh "tar -xvf v1.6.36.tar.gz"
 	sh "tar -xvf freetype-2.10.1.tar.gz"
-	sh "tar -xvf 1.0.17.tar.gz"
+	sh "tar -xvf 1.0.18.tar.gz"
 }
 
 def build_zlib(TARGET, SYSROOT) {
@@ -160,7 +160,7 @@ def build_libsodium(TARGET, SYSROOT) {
 		CONF_PARAMS = "--host=${TARGET} "
 	}
 
-	dir("libsodium-1.0.17") {
+	dir("libsodium-1.0.18") {
 		sh "./autogen.sh"
 		sh "./configure --prefix=${SYSROOT} ${CONF_PARAMS}"
 		sh "make clean"
@@ -228,7 +228,7 @@ def buildStep(dockerImage, generator, os, defines) {
 
 				slackSend color: "good", channel: "#jenkins", message: "Starting ${os} build target..."
 				dir("build") {
-					sh "PKG_CONFIG_PATH=${SYSROOT}/lib/pkgconfig/:${SYSROOT}/share/pkgconfig/ cmake -G\"${generator}\" ${defines} -DVER_EXTRA=\"-${fixed_os}-${fixed_job_name}\" .."
+					sh "PKG_CONFIG_PATH=${SYSROOT}/lib/pkgconfig/:${SYSROOT}/share/pkgconfig/ cmake -G\"${generator}\" ${defines} -DVER_EXTRA=\"-${fixed_os}-${fixed_job_name}\" -DCMAKE_PREFIX_PATH=${SYSROOT} .. "
 					sh "VERBOSE=1 cmake --build . --config Release -- -j 8"
 
 					if (os.contains('Windows')) {
