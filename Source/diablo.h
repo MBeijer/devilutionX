@@ -83,10 +83,6 @@
 //}
 //#endif
 
-#if __EMSCRIPTEN__
-typedef __builtin_va_list va_list;
-#endif
-
 extern HWND ghMainWnd;
 extern int glMid1Seed[NUMLEVELS];
 extern int glMid2Seed[NUMLEVELS];
