@@ -3,8 +3,13 @@
 #include <ctype.h>
 #include <math.h>
 // work around https://reviews.llvm.org/D51265
-#if defined(__APPLE__) || defined(__FreeBSD__) || defined(__EMSCRIPTEN__)
+#if defined(__APPLE__) || defined(__FreeBSD__)
 #include "macos_stdarg.h"
+#elseif defined(__EMSCRIPTEN__)
+typedef __builtin_va_list va_list;
+#define _VA_LIST_T
+#define va_start(ap, param) (ap)
+#define va_end(ap)          (ap)
 #else
 #include <stdarg.h>
 #endif
