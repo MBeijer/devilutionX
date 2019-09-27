@@ -27,8 +27,6 @@
 #ifndef __STORMPORT_H__
 #define __STORMPORT_H__
 
-#define STORMAPI
-
 #ifndef __cplusplus
   #define bool char
   #define true 1
@@ -129,21 +127,21 @@
 
 #if !defined(PLATFORM_DEFINED) && defined(__AMIGA__)
 
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <fcntl.h>
-#include <unistd.h>
-#include <stdint.h>
-#include <stdlib.h>
-#include <stdio.h>
-#include <stdarg.h>
-#include <string.h>
-#include <ctype.h>
-#include <assert.h>
-#include <errno.h>
+  #include <sys/types.h>
+  #include <sys/stat.h>
+  #include <fcntl.h>
+  #include <unistd.h>
+  #include <stdint.h>
+  #include <stdlib.h>
+  #include <stdio.h>
+  #include <stdarg.h>
+  #include <string.h>
+  #include <ctype.h>
+  #include <assert.h>
+  #include <errno.h>
 
-#define PLATFORM_AMIGA
-#define PLATFORM_DEFINED
+  #define PLATFORM_AMIGA
+  #define PLATFORM_DEFINED
 
 #endif
 

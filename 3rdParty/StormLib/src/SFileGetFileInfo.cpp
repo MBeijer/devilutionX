@@ -131,7 +131,7 @@ static bool GetFilePatchChain(TMPQFile * hf, void * pvFileInfo, DWORD cbFileInfo
 //  cbFileInfo - Size of the buffer pointed by pvFileInfo
 //  pcbLengthNeeded - Receives number of bytes necessary to store the information
 
-bool STORMAPI SFileGetFileInfo(
+bool WINAPI SFileGetFileInfo(
     HANDLE hMpqOrFile,
     SFileInfoClass InfoClass,
     void * pvFileInfo,
@@ -860,7 +860,7 @@ bool STORMAPI SFileGetFileInfo(
 }
 
 #ifdef FULL
-bool STORMAPI SFileFreeFileInfo(void * pvFileInfo, SFileInfoClass InfoClass)
+bool WINAPI SFileFreeFileInfo(void * pvFileInfo, SFileInfoClass InfoClass)
 {
     switch(InfoClass)
     {
@@ -916,6 +916,7 @@ static TFileHeader2Ext data2ext[] =
     {0x47585053, 0xFFFFFFFF, 0x00000000, 0x00000000, "bls"},    // WoW pixel shaders
     {0xE0FFD8FF, 0xFFFFFFFF, 0x00000000, 0x00000000, "jpg"},    // JPEG image
     {0x503B4449, 0xFFFFFFFF, 0x3B4C5857, 0xFFFFFFFF, "slk"},    // SLK file (usually starts with "ID;PWXL;N;E")
+    {0x61754C1B, 0xFFFFFFFF, 0x00000000, 0x00000000, "lua"},    // Compiled LUA files
     {0x00000000, 0x00000000, 0x00000000, 0x00000000, "xxx"},    // Default extension
     {0, 0, 0, 0, NULL}                                          // Terminator
 };
@@ -963,7 +964,7 @@ static int CreatePseudoFileName(HANDLE hFile, TFileEntry * pFileEntry, char * sz
     return ERROR_CAN_NOT_COMPLETE;
 }
 
-bool STORMAPI SFileGetFileName(HANDLE hFile, char * szFileName)
+bool WINAPI SFileGetFileName(HANDLE hFile, char * szFileName)
 {
     TMPQFile * hf = (TMPQFile *)hFile;  // MPQ File handle
     int nError = ERROR_INVALID_HANDLE;

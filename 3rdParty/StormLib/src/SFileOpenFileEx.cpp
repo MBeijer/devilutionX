@@ -172,7 +172,7 @@ bool OpenPatchedFile(HANDLE hMpq, const char * szFileName, HANDLE * PtrFile)
 // pointed by plcLocales. There must be enough entries to copy the localed,
 // otherwise the function returns ERROR_INSUFFICIENT_BUFFER.
 
-int STORMAPI SFileEnumLocales(
+int WINAPI SFileEnumLocales(
     HANDLE hMpq,
     const char * szFileName,
     LCID * PtrLocales,
@@ -228,7 +228,7 @@ int STORMAPI SFileEnumLocales(
 //   dwSearchScope - Where to search
 //   PtrFile       - Pointer to store opened file handle
 
-bool STORMAPI SFileOpenFileEx(HANDLE hMpq, const char * szFileName, DWORD dwSearchScope, HANDLE * PtrFile)
+bool WINAPI SFileOpenFileEx(HANDLE hMpq, const char * szFileName, DWORD dwSearchScope, HANDLE * PtrFile)
 {
     TMPQArchive * ha = IsValidMpqHandle(hMpq);
     TFileEntry  * pFileEntry = NULL;
@@ -308,7 +308,10 @@ bool STORMAPI SFileOpenFileEx(HANDLE hMpq, const char * szFileName, DWORD dwSear
                 }
             }
 
-            nError = ERROR_FILE_NOT_FOUND;
+            if(pFileEntry == NULL)
+            {
+                nError = ERROR_FILE_NOT_FOUND;
+            }
         }
 
         // Ignore unknown loading flags (example: MPQ_2016_v1_WME4_4.w3x)
@@ -372,15 +375,15 @@ bool STORMAPI SFileOpenFileEx(HANDLE hMpq, const char * szFileName, DWORD dwSear
 //   hMpq          - Handle of opened MPQ archive
 //   szFileName    - Name of file to look for
 
-bool STORMAPI SFileHasFile(HANDLE hMpq, const char * szFileName)
+bool WINAPI SFileHasFile(HANDLE hMpq, const char * szFileName)
 {
     return SFileOpenFileEx(hMpq, szFileName, SFILE_OPEN_CHECK_EXISTS, NULL);
 }
 
 //-----------------------------------------------------------------------------
-// bool STORMAPI SFileCloseFile(HANDLE hFile);
+// bool WINAPI SFileCloseFile(HANDLE hFile);
 
-bool STORMAPI SFileCloseFile(HANDLE hFile)
+bool WINAPI SFileCloseFile(HANDLE hFile)
 {
     TMPQFile * hf = (TMPQFile *)hFile;
     

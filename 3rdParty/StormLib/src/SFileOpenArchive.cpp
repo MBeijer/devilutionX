@@ -127,12 +127,12 @@ static int VerifyMpqTablePositions(TMPQArchive * ha, ULONGLONG FileSize)
 // SFileGetLocale and SFileSetLocale
 // Set the locale for all newly opened files
 
-LCID STORMAPI SFileGetLocale()
+LCID WINAPI SFileGetLocale()
 {
     return lcFileLocale;
 }
 
-LCID STORMAPI SFileSetLocale(LCID lcNewLocale)
+LCID WINAPI SFileSetLocale(LCID lcNewLocale)
 {
     lcFileLocale = lcNewLocale;
     return lcFileLocale;
@@ -146,7 +146,7 @@ LCID STORMAPI SFileSetLocale(LCID lcNewLocale)
 //   dwFlags    - See MPQ_OPEN_XXX in StormLib.h
 //   phMpq      - Pointer to store open archive handle
 
-bool STORMAPI SFileOpenArchive(
+bool WINAPI SFileOpenArchive(
     const TCHAR * szMpqName,
     DWORD dwPriority,
     DWORD dwFlags,
@@ -179,10 +179,11 @@ bool STORMAPI SFileOpenArchive(
 #ifndef FULL
     char translatedName[260];
     TranslateFileName(translatedName, sizeof(translatedName), szMpqName);
+    strcpy(szMpqName, translatedName);
 #endif
 
     // Open the MPQ archive file
-    pStream = FileStream_OpenFile(translatedName, dwStreamFlags);
+    pStream = FileStream_OpenFile(szMpqName, dwStreamFlags);
     if(pStream == NULL)
         return false;
 
@@ -381,6 +382,10 @@ bool STORMAPI SFileOpenArchive(
         if(dwFlags & (MPQ_OPEN_NO_LISTFILE | MPQ_OPEN_NO_ATTRIBUTES))
             ha->dwFlags |= MPQ_FLAG_READ_ONLY;
 
+        // Check if the caller wants to force adding listfile
+        if(dwFlags & MPQ_OPEN_FORCE_LISTFILE)
+            ha->dwFlags |= MPQ_FLAG_LISTFILE_FORCE;
+
         // Remember whether whis is a map for Warcraft III
         if(bIsWarcraft3Map)
             ha->dwFlags |= MPQ_FLAG_WAR3_MAP;
@@ -470,12 +475,12 @@ bool STORMAPI SFileOpenArchive(
 
 #ifdef FULL
 //-----------------------------------------------------------------------------
-// bool STORMAPI SFileSetDownloadCallback(HANDLE, SFILE_DOWNLOAD_CALLBACK, void *);
+// bool WINAPI SFileSetDownloadCallback(HANDLE, SFILE_DOWNLOAD_CALLBACK, void *);
 //
 // Sets a callback that is called when content is downloaded from the master MPQ
 //
 
-bool STORMAPI SFileSetDownloadCallback(HANDLE hMpq, SFILE_DOWNLOAD_CALLBACK DownloadCB, void * pvUserData)
+bool WINAPI SFileSetDownloadCallback(HANDLE hMpq, SFILE_DOWNLOAD_CALLBACK DownloadCB, void * pvUserData)
 {
     TMPQArchive * ha = (TMPQArchive *)hMpq;
 
@@ -498,7 +503,7 @@ bool STORMAPI SFileSetDownloadCallback(HANDLE hMpq, SFILE_DOWNLOAD_CALLBACK Down
 // and terminating without calling SFileCloseArchive might corrupt the archive.
 //
 
-bool STORMAPI SFileFlushArchive(HANDLE hMpq)
+bool WINAPI SFileFlushArchive(HANDLE hMpq)
 {
     TMPQArchive * ha;
     int nResultError = ERROR_SUCCESS;
@@ -536,7 +541,7 @@ bool STORMAPI SFileFlushArchive(HANDLE hMpq)
 #endif
         }
 
-        if(ha->dwFlags & MPQ_FLAG_LISTFILE_NEW)
+        if(ha->dwFlags & (MPQ_FLAG_LISTFILE_NEW | MPQ_FLAG_LISTFILE_FORCE))
         {
             nError = SListFileSaveToMpq(ha);
             if(nError != ERROR_SUCCESS)
@@ -590,10 +595,10 @@ bool STORMAPI SFileFlushArchive(HANDLE hMpq)
 // bool SFileCloseArchive(HANDLE hMpq);
 //
 
-bool STORMAPI SFileCloseArchive(HANDLE hMpq)
+bool WINAPI SFileCloseArchive(HANDLE hMpq)
 {
     TMPQArchive * ha = IsValidMpqHandle(hMpq);
-    bool bResult = true;
+    bool bResult = false;
 
     // Only if the handle is valid
     if(ha == NULL)
