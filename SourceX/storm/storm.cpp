@@ -602,7 +602,7 @@ void SVidPlayBegin(char *filename, int a2, int a3, int a4, int a5, int flags, HA
 	}
 #else
 #if D_BPP == 8
-	SDL_SetVideoMode(SVidWidth, SVidHeight, D_BPP, surface->flags);
+	SDL_SetVideoMode(SVidWidth, SVidHeight, D_BPP, GetOutputSurface()->flags);
 #endif
 #endif
 	memcpy(SVidPreviousPalette, orig_palette, 1024);
@@ -778,7 +778,7 @@ void SVidPlayEnd(HANDLE video)
 	video = NULL;
 
 #if D_BPP == 8
-	SDL_SetVideoMode(SCREEN_WIDTH, SCREEN_HEIGHT, D_BPP, surface->flags);
+	SDL_SetVideoMode(SCREEN_WIDTH, SCREEN_HEIGHT, D_BPP, GetOutputSurface()->flags);
 #endif
 
 	memcpy(orig_palette, SVidPreviousPalette, 1024);
