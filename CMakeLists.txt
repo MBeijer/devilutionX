@@ -83,6 +83,7 @@ if(AMIGA)
   set(NONET ON)
   set(USE_SDL1 "Use SDL1.2 instead of SDL2" ON)
   find_package(Freetype REQUIRED)
+  find_package(ZLIB REQUIRED)
   set(CMAKE_CXX_FLAGS "${CMAKE_C_FLAGS} -fexceptions")
 endif()
 
@@ -307,7 +308,7 @@ foreach(target devilution devilutionx)
 
   if(AMIGA)
     target_link_libraries(devilutionx PRIVATE
-      ${FREETYPE_LIBRARIES})
+      ${FREETYPE_LIBRARY} ${ZLIB_LIBRARY})
     if(NOT WARPOS)
       target_link_libraries(devilutionx PRIVATE -ldebug)
     endif()
