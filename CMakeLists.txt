@@ -79,6 +79,7 @@ endif()
 
 if(AMIGA)
   set(ASAN OFF)
+  set(UBSAN OFF)
   set(NONET ON)
   set(USE_SDL1 "Use SDL1.2 instead of SDL2" ON)
   find_package(Freetype REQUIRED)
@@ -284,15 +285,6 @@ if(NOT NONET)
   target_link_libraries(devilutionx PRIVATE sodium)
 endif()
 
-if(AMIGA)
-  target_link_libraries(devilutionx PRIVATE
-    ${FREETYPE_LIBRARIES})
-  target_link_libraries(devilutionx PRIVATE zlib)
-  if(NOT WARPOS)
-    target_link_libraries(devilutionx PRIVATE -ldebug)
-  endif()
-endif()
-
 target_compile_definitions(devilution PRIVATE DEVILUTION_ENGINE)
 target_compile_definitions(devilution PUBLIC
   "$<$<BOOL:${DEBUG}>:_DEBUG>"
@@ -311,6 +303,14 @@ foreach(target devilution devilutionx)
       SDL2::SDL2main
       SDL2::SDL2_ttf
       SDL2::SDL2_mixer)
+  endif()
+
+  if(AMIGA)
+    target_link_libraries(devilutionx PRIVATE
+      ${FREETYPE_LIBRARIES})
+    if(NOT WARPOS)
+      target_link_libraries(devilutionx PRIVATE -ldebug)
+    endif()
   endif()
 
   if(NONET)
