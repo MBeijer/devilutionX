@@ -10,7 +10,7 @@ Status | Platform
 ![Discord Channel](https://avatars3.githubusercontent.com/u/1965106?s=16&v=4) [Discord Chat Channel](https://discord.gg/aQBQdDe)
 
 # How To Play:
- - Copy diabdat.mpq from your CD, or GoG install folder, to the DevilutionX game directory ; Make sure it is all lowercase.
+ - Copy diabdat.mpq from your CD, or GoG install folder, to the DevilutionX install folder ; Make sure it is all lowercase.
  - [Download DevilutionX](https://github.com/diasurgical/devilutionX/releases), or build from source
  - Install [SDL2](https://www.libsdl.org/download-2.0.php) (including [SDL2_mixer](https://www.libsdl.org/projects/SDL_mixer/) and [SDL2_ttf](https://www.libsdl.org/projects/SDL_ttf/))
  - Run `./devilutionx`
@@ -30,10 +30,9 @@ sudo dnf install cmake glibc-devel SDL2-devel SDL2_ttf-devel SDL2_mixer-devel li
 ```
 ### Compiling
 ```
-mkdir build
 cd build
 cmake ..
-make -j$(nproc)
+cmake --build . -j $(nproc)
 ```
 </details>
 
@@ -43,25 +42,22 @@ Make sure you have [Homebrew](https://brew.sh/) installed, then run:
 
 ```
 brew bundle
-mkdir build
 cd build
 cmake ..
-make -j$(sysctl -n hw.physicalcpu)
+cmake --build . -j $(sysctl -n hw.physicalcpu)
 ```
 </details>
 <details><summary>FreeBSD</summary>
-*Note: At the moment this only appears to work from a 32bit system.*
 
 ### Installing dependencies
 ```
-pkg install cmake gcc8 sdl2_mixer sdl2_ttf libsodium
+pkg install cmake sdl2_mixer sdl2_ttf libsodium
 ```
 ### Compiling
 ```
-mkdir build
 cd build
-cmake -DCMAKE_C_COMPILER=/usr/local/bin/gcc8 -DCMAKE_CXX_COMPILER=/usr/local/bin/g++8 ..
-make -j$(sysctl -n hw.ncpu)
+cmake ..
+cmake --build . -j $(sysctl -n hw.ncpu)
 ```
 </details>
 
@@ -69,17 +65,16 @@ make -j$(sysctl -n hw.ncpu)
 
 ### Installing dependencies on Debian and Ubuntu
 
-Download and place the 32bit MinGW Development Libraries of [SDL2](https://www.libsdl.org/download-2.0.php), [SDL2_mixer](https://www.libsdl.org/projects/SDL_mixer/), [SDL2_ttf](https://www.libsdl.org/projects/SDL_ttf/) and [Libsodium](https://github.com/jedisct1/libsodium/releases) in `/user/i686-w64-mingw32`.
+Download and place the 32bit MinGW Development Libraries of [SDL2](https://www.libsdl.org/download-2.0.php), [SDL2_mixer](https://www.libsdl.org/projects/SDL_mixer/), [SDL2_ttf](https://www.libsdl.org/projects/SDL_ttf/) and [Libsodium](https://github.com/jedisct1/libsodium/releases) in `/usr/i686-w64-mingw32`.
 
 ```
 sudo apt-get install cmake gcc-mingw-w64-i686 g++-mingw-w64-i686
 ```
 ### Compiling
 ```
-mkdir build
 cd build
 cmake -DASAN=OFF -DCMAKE_TOOLCHAIN_FILE=../CMake/mingwcc.cmake ..
-make -j$(nproc)
+cmake --build . -j $(nproc)
 ```
 </details>
 <details><summary>Windows via Visual Studio</summary>
@@ -132,17 +127,15 @@ pkgman install cmake devel:libsdl2 devel:libsdl2_mixer devel:libsdl2_ttf devel:l
 ```
 ### Compiling on 32 bit Haiku
 ```
-mkdir build
 cd build
 cmake -DCMAKE_C_COMPILER=gcc-x86 -DCMAKE_CXX_COMPILER=g++-x86 -DBINARY_RELEASE=ON ..
-make -j$(nproc)
+cmake --build . -j $(nproc)
 ```
 ### Compiling on 64 bit Haiku
 ```
-mkdir build
 cd build
 cmake ..
-make -j$(nproc)
+cmake --build . -j $(nproc)
 ```
 </details>
 
@@ -150,7 +143,8 @@ make -j$(nproc)
 ### General
 The default build type is `Debug`. This can be changed with `-DBINARY_RELEASE=ON`. Independently of this, the debug mode of the Diablo engine is always enabled by default. It can be disabled with `-DDEBUG=OFF`. Finally, in debug builds the address sanitizer is enabled by default. This can be disabled with `-DASAN=OFF`.
 You can also generate 32bit builds on 64bit platforms by setting `-DCMAKE_TOOLCHAIN_FILE=../CMake/32bit.cmake` (remember to use the `linux32` command if on Linux).
-Network support can be deiabled using `-DNONET`, this also removes the need for the ASIO and Sodium dependencies
+Network support can be disabled using `-DNONET=ON`, this also removes the need for the ASIO and Sodium dependencies.
+You can compile the shareware version with `-DSPAWN=ON` this will allow you to try the game using spawn.mpq from the original shareware which can still be [downloaded](http://ftp.blizzard.com/pub/demos/diablosw.exe) for free.
 
 ### mingw32
 Use `-DCROSS_PREFIX=/path/to/prefix` if the `i686-w64-mingw32` directory is not in `/usr`.

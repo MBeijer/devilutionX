@@ -2,10 +2,12 @@
 
 namespace dvl {
 
-void LoadArt(char *pszFile, Art *art, int frames, PALETTEENTRY *pPalette)
+void LoadArt(const char *pszFile, Art *art, int frames, PALETTEENTRY *pPalette)
 {
 	if (art == NULL || art->surface != NULL)
 		return;
+
+	art->frames = frames;
 
 	DWORD width, height, bpp;
 	if (!SBmpLoadImage(pszFile, 0, 0, 0, &width, &height, &bpp))
@@ -32,12 +34,32 @@ void LoadArt(char *pszFile, Art *art, int frames, PALETTEENTRY *pPalette)
 	        art_surface->pitch * art_surface->format->BytesPerPixel * height, 0, 0, 0)) {
 		SDL_Log("Failed to load image");
 		SDL_FreeSurface(art_surface);
+		art->surface = nullptr;
 		return;
 	}
 
 	art->surface = art_surface;
-	art->frames = frames;
 	art->frame_height = height / frames;
+}
+
+void LoadMaskedArt(const char *pszFile, Art *art, int frames, int mask)
+{
+	LoadArt(pszFile, art, frames);
+	if (art->surface != nullptr) {
+#ifdef USE_SDL1
+		SDL_SetColorKey(art->surface, SDL_SRCCOLORKEY, mask);
+#else
+		SDL_SetColorKey(art->surface, SDL_TRUE, mask);
+#endif
+	}
+}
+
+void LoadArt(Art *art, const BYTE *artData, int w, int h, int frames)
+{
+	art->frames = frames;
+	art->surface = SDL_CreateRGBSurfaceWithFormatFrom(
+		const_cast<BYTE *>(artData), w, h, 8, w, SDL_PIXELFORMAT_INDEX8);
+	art->frame_height = h / frames;
 }
 
 } // namespace dvl

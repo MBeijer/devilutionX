@@ -5,20 +5,29 @@
 #include <string>
 #include <algorithm>
 
+#include "DiabloUI/scrollbar.h"
 #include "DiabloUI/diabloui.h"
+
+#include "DiabloUI/art_draw.h"
+#include "DiabloUI/text_draw.h"
+#include "DiabloUI/fonts.h"
+#include "DiabloUI/button.h"
+#include "DiabloUI/dialogs.h"
 
 namespace dvl {
 
-TTF_Font *font = nullptr;
 int SelectedItemMin = 1;
 int SelectedItemMax = 1;
-BYTE *FontTables[4];
-Art ArtFonts[4][2];
+
+std::size_t ListViewportSize = 1;
+const std::size_t *ListOffset = nullptr;
+
 Art ArtLogos[3];
 Art ArtFocus[3];
 Art ArtBackground;
 Art ArtCursor;
 Art ArtHero;
+bool gbSpawned;
 
 void (*gfnSoundFunction)(char *file);
 void (*gfnListFocus)(int value);
@@ -31,113 +40,23 @@ bool UiItemsWraps;
 char *UiTextInput;
 int UiTextInputLen;
 
+namespace {
+
 int fadeValue = 0;
 int SelectedItem = 0;
 
-char *errorTitle[] = {
-	"SDL Error",
-	"Out of Memory Error",
-	"SDL Error",
-	"Data File Error",
-	"SDL Error",
-	"Out of Disk Space",
-	"SDL Error",
-	"Data File Error",
-	"Windows 2000 Restricted User Advisory",
-	"Read-Only Directory Error",
-};
-char *errorMessages[] = {
-	"Diablo was unable to properly initialize SDL.\nPlease try the following solutions to correct the problem:\n\n    Install the most recent SDL provided for your distribution.\n\nIf you continue to have problems with SDL, create an issue on GitHub:\n    https://github.com/diasurgical/devilutionX/issues\n\n\nThe error encountered while trying to initialize was:\n\n    %s",
-	"Diablo has exhausted all the memory on your system.\nMake sure you have at least 512MB of free system memory\n\nThe error encountered was:\n\n    %s",
-	"Diablo was unable to open a required file.\nPlease ensure that the diabdat.mpq is in the same folder as Devilution.\nIf this problem persists, try checking that the md5 of diabdat.mpq is either 011bc6518e6166206231080a4440b373 or 68f049866b44688a7af65ba766bef75a.\n\n\nThe problem occurred while trying to load a file.\n\n    %s",
-	"Diablo was unable to find the file \"ddraw.dll\", which is a component of Microsoft DirectX.\nPlease run the program \"SETUP.EXE\" on the Diablo CD-ROM and install Microsoft DirectX.\n\nIf you continue to have problems with DirectX, please contact Microsoft's Technical Support at:\n\n    USA telephone: 1-800-426-9400\n    International telephone: 206-882-8080\n    http://www.microsoft.com\n\n\nThe error encountered while trying to initialize DirectX was:\n\n    %s",
-	"Diablo was unable to find the file \"dsound.dll\", which is a component of Microsoft DirectX.\nPlease run the program \"SETUP.EXE\" on the Diablo CD-ROM and install Microsoft DirectX.\n\nIf you continue to have problems with DirectX, please contact Microsoft's Technical Support at:\n\n    USA telephone: 1-800-426-9400\n    International telephone: 206-882-8080\n    http://www.microsoft.com\n\n\nThe error encountered while trying to initialize DirectX was:\n\n    %s",
-	"Diablo requires at least 10 megabytes of free disk space to run properly.\nThe disk:\n\n%s\n\nhas less than 10 megabytes of free space left.\n\nPlease free some space on your drive and run Diablo again.",
-	"Diablo was unable to switch video modes.\nThis is a common problem for computers with more than one video card.\nTo correct this problem, please set your video resolution to 640 x 480 and try running Diablo again.\n\nFor Windows 95 and Windows NT\n    Select \"Settings - Control Panel\" from the \"Start\" menu\n    Run the \"Display\" control panel applet\n    Select the \"Settings\" tab\n    Set the \"Desktop Area\" to \"640 x 480 pixels\"\n\n\nThe error encountered while trying to switch video modes was:\n\n    %s",
-	"Diablo cannot read a required data file.\nYour diabdat.mpq may not be in the Devilution folder.\nPlease ensure that the filename is in all lower case and try again.\n    %s",
-	"In order to install, play or patch Diablo using the Windows 2000 operating system,\nyou will need to log in as either an Administrator or as a Power User.\n\nUsers, also known as Restricted Users, do not have sufficient access to install or play the game properly.\n\nIf you have further questions regarding User Rights in Windows 2000, please refer to your Windows 2000 documentation or contact your system administrator.",
-	"Diablo is being run from:\n\n    %s\n\n\nDiablo or the current user does not seem to have write privilages in this directory. Contact your system administrator.\n\nNote that Windows 2000 Restricted Users can not write to the Windows or Program Files directory hierarchies.",
-};
+struct {
+	bool upArrowPressed = false;
+	bool downArrowPressed = false;
+} scrollBarState;
 
-DWORD FormatMessage(
-    DWORD dwFlags,
-    LPCVOID lpSource,
-    DWORD dwMessageId,
-    DWORD dwLanguageId,
-    char *lpBuffer,
-    DWORD nSize,
-    va_list *Arguments)
-{
-	DUMMY();
-	return 0;
-}
-
-LPCSTR DVL_MAKEINTRESOURCE(int i)
-{
-	switch (i) {
-	case IDD_DIALOG1:
-		return (LPCSTR)0;
-	case IDD_DIALOG2:
-		return (LPCSTR)1;
-	case IDD_DIALOG3:
-		return (LPCSTR)2;
-	case IDD_DIALOG4:
-		return (LPCSTR)3;
-	case IDD_DIALOG5:
-		return (LPCSTR)4;
-	case IDD_DIALOG7:
-		return (LPCSTR)5;
-	case IDD_DIALOG8:
-		return (LPCSTR)6;
-	case IDD_DIALOG9:
-		return (LPCSTR)7;
-	case IDD_DIALOG10:
-		return (LPCSTR)8;
-	case IDD_DIALOG11:
-		return (LPCSTR)9;
-	}
-
-	return (LPCSTR)-1;
-}
-
-int DialogBoxParam(HINSTANCE hInstance, LPCSTR msgId, HWND hWndParent, DLGPROC lpDialogFunc, LPARAM dwInitParam)
-{
-	char text[1024];
-	snprintf(text, 1024, errorMessages[(intptr_t)msgId], dwInitParam);
-
-	if (SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, errorTitle[(intptr_t)msgId], text, window) <= -1) {
-		SDL_Log(SDL_GetError());
-		return -1;
-	}
-
-	return 0;
-}
-
-BOOL SetDlgItemText(HWND hDlg, int nIDDlgItem, LPCSTR lpString)
-{
-	return false;
-}
-
-BOOL EndDialog(HWND hDlg, INT_PTR nResult)
-{
-	return false;
-}
-
-BOOL SetWindowPos(HWND hWnd, HWND hWndInsertAfter, int X, int Y, int cx, int cy, UINT uFlags)
-{
-	SDL_SetWindowPosition(window, X, Y);
-
-	return true;
-}
+} // namespace
 
 void UiDestroy()
 {
 	DUMMY();
 	ArtHero.Unload();
-
-	if (font)
-		TTF_CloseFont(font);
-	font = NULL;
+	UnloadTtfFont();
 }
 
 void UiInitList(int min, int max, void (*fnFocus)(int value), void (*fnSelect)(int value), void (*fnEsc)(), UiItem *items, int itemCnt, bool itemsWraps, bool (*fnYesNo)())
@@ -145,6 +64,7 @@ void UiInitList(int min, int max, void (*fnFocus)(int value), void (*fnSelect)(i
 	SelectedItem = min;
 	SelectedItemMin = min;
 	SelectedItemMax = max;
+	ListViewportSize = SelectedItemMax - SelectedItemMin + 1;
 	gfnListFocus = fnFocus;
 	gfnListSelect = fnSelect;
 	gfnListEsc = fnEsc;
@@ -162,6 +82,17 @@ void UiInitList(int min, int max, void (*fnFocus)(int value), void (*fnSelect)(i
 			UiTextInput = items[i].edit.value;
 			UiTextInputLen = items[i].edit.max_length;
 		}
+	}
+}
+
+void UiInitScrollBar(UiScrollBar *ui_sb, std::size_t viewport_size, const std::size_t *current_offset)
+{
+	ListViewportSize = viewport_size;
+	ListOffset = current_offset;
+	if (ListViewportSize >= static_cast<std::size_t>(SelectedItemMax - SelectedItemMin + 1)) {
+		ui_sb->add_flag(UIS_HIDDEN);
+	} else {
+		ui_sb->remove_flag(UIS_HIDDEN);
 	}
 }
 
@@ -202,6 +133,40 @@ void UiFocus(int itemIndex, bool wrap = false)
 
 	if (gfnListFocus)
 		gfnListFocus(itemIndex);
+}
+
+// UiFocusPageUp/Down mimics the slightly weird behaviour of actual Diablo.
+
+void UiFocusPageUp()
+{
+	if (ListOffset == nullptr || *ListOffset == 0) {
+		UiFocus(SelectedItemMin);
+	} else {
+		const std::size_t relpos = (SelectedItem - SelectedItemMin) - *ListOffset;
+		std::size_t prev_page_start = SelectedItem - relpos;
+		if (prev_page_start >= ListViewportSize)
+			prev_page_start -= ListViewportSize;
+		else
+			prev_page_start = 0;
+		UiFocus(prev_page_start);
+		UiFocus(*ListOffset + relpos);
+	}
+}
+
+void UiFocusPageDown()
+{
+	if (ListOffset == nullptr || *ListOffset + ListViewportSize > static_cast<std::size_t>(SelectedItemMax)) {
+		UiFocus(SelectedItemMax);
+	} else {
+		const std::size_t relpos = (SelectedItem - SelectedItemMin) - *ListOffset;
+		std::size_t next_page_end = SelectedItem + (ListViewportSize - relpos - 1);
+		if (next_page_end + ListViewportSize <= static_cast<std::size_t>(SelectedItemMax))
+			next_page_end += ListViewportSize;
+		else
+			next_page_end = SelectedItemMax;
+		UiFocus(next_page_end);
+		UiFocus(*ListOffset + relpos);
+	}
 }
 
 void selhero_CatToName(char *in_buf, char *out_buf, int cnt)
@@ -253,10 +218,10 @@ bool UiFocusNavigation(SDL_Event *event)
 				UiFocus(SelectedItem + 1, UiItemsWraps);
 			return true;
 		case SDLK_PAGEUP:
-			UiFocus(SelectedItemMin);
+			UiFocusPageUp();
 			return true;
 		case SDLK_PAGEDOWN:
-			UiFocus(SelectedItemMax);
+			UiFocusPageDown();
 			return true;
 		case SDLK_RETURN:
 		case SDLK_KP_ENTER:
@@ -320,7 +285,7 @@ bool UiFocusNavigation(SDL_Event *event)
 		}
 	}
 
-	if (gUiItems && gUiItemCnt && UiItemMouseEvents(event, gUiItems, gUiItemCnt))
+	if (UiItemMouseEvents(event, gUiItems, gUiItemCnt))
 		return true;
 
 	if (gfnListEsc && event->type == SDL_KEYDOWN && event->key.keysym.sym == SDLK_ESCAPE) {
@@ -373,66 +338,25 @@ bool IsInsideRect(const SDL_Event &event, const SDL_Rect &rect)
 	return SDL_PointInRect(&point, &rect);
 }
 
-void LoadMaskedArtFont(char *pszFile, Art *art, int frames, int mask)
-{
-	LoadArt(pszFile, art, frames);
-#ifdef USE_SDL1
-	SDL_SetColorKey(art->surface, SDL_SRCCOLORKEY, mask);
-#else
-	SDL_SetColorKey(art->surface, SDL_TRUE, mask);
-#endif
-}
-
-void LoadArtFont(char *pszFile, int size, int color)
-{
-	LoadMaskedArtFont(pszFile, &ArtFonts[size][color], 256, 32);
-}
-
 void LoadUiGFX()
 {
-	FontTables[AFT_SMALL] = LoadFileInMem("ui_art\\font16.bin", 0);
-	FontTables[AFT_MED] = LoadFileInMem("ui_art\\font24.bin", 0);
-	FontTables[AFT_BIG] = LoadFileInMem("ui_art\\font30.bin", 0);
-	FontTables[AFT_HUGE] = LoadFileInMem("ui_art\\font42.bin", 0);
-	LoadArtFont("ui_art\\font16s.pcx", AFT_SMALL, AFC_SILVER);
-	LoadArtFont("ui_art\\font16g.pcx", AFT_SMALL, AFC_GOLD);
-	LoadArtFont("ui_art\\font24s.pcx", AFT_MED, AFC_SILVER);
-	LoadArtFont("ui_art\\font24g.pcx", AFT_MED, AFC_GOLD);
-	LoadArtFont("ui_art\\font30s.pcx", AFT_BIG, AFC_SILVER);
-	LoadArtFont("ui_art\\font30g.pcx", AFT_BIG, AFC_GOLD);
-	LoadArtFont("ui_art\\font42g.pcx", AFT_HUGE, AFC_GOLD);
-
-	LoadMaskedArtFont("ui_art\\smlogo.pcx", &ArtLogos[LOGO_MED], 15);
-	LoadMaskedArtFont("ui_art\\focus16.pcx", &ArtFocus[FOCUS_SMALL], 8);
-	LoadMaskedArtFont("ui_art\\focus.pcx", &ArtFocus[FOCUS_MED], 8);
-	LoadMaskedArtFont("ui_art\\focus42.pcx", &ArtFocus[FOCUS_BIG], 8);
-	LoadMaskedArtFont("ui_art\\cursor.pcx", &ArtCursor, 1, 0);
+	LoadMaskedArt("ui_art\\smlogo.pcx", &ArtLogos[LOGO_MED], 15);
+	LoadMaskedArt("ui_art\\focus16.pcx", &ArtFocus[FOCUS_SMALL], 8);
+	LoadMaskedArt("ui_art\\focus.pcx", &ArtFocus[FOCUS_MED], 8);
+	LoadMaskedArt("ui_art\\focus42.pcx", &ArtFocus[FOCUS_BIG], 8);
+	LoadMaskedArt("ui_art\\cursor.pcx", &ArtCursor, 1, 0);
 	LoadArt("ui_art\\heros.pcx", &ArtHero, 4);
-}
-
-void InitFont()
-{
-	if (!TTF_WasInit() && TTF_Init() == -1) {
-		printf("TTF_Init: %s\n", TTF_GetError());
-		exit(1);
-	}
-	atexit(TTF_Quit);
-
-	font = TTF_OpenFont("CharisSILB.ttf", 17);
-	if (font == NULL) {
-		printf("TTF_OpenFont: %s\n", TTF_GetError());
-		return;
-	}
-
-	TTF_SetFontKerning(font, false);
-	TTF_SetFontHinting(font, TTF_HINTING_MONO);
 }
 
 void UiInitialize()
 {
 	LoadUiGFX();
-	ShowCursor(false);
-	InitFont();
+	LoadArtFonts();
+	if (ArtCursor.surface != nullptr) {
+		if (SDL_ShowCursor(SDL_DISABLE) <= -1) {
+			SDL_Log(SDL_GetError());
+		}
+	}
 }
 
 int UiProfileGetString()
@@ -464,11 +388,6 @@ void UiSetupPlayerInfo(char *infostr, _uiheroinfo *pInfo, DWORD type)
 	    pInfo->vitality,
 	    pInfo->gold,
 	    pInfo->spawned);
-}
-
-void UiAppActivate(BOOL bActive)
-{
-	DUMMY();
 }
 
 BOOL UiValidPlayerName(char *name)
@@ -561,41 +480,6 @@ BOOL UiCreatePlayerDescription(_uiheroinfo *info, DWORD mode, char *desc)
 	return true;
 }
 
-void DrawArt(int screenX, int screenY, Art *art, int nFrame, DWORD drawW)
-{
-	if (screenY >= SCREEN_Y + SCREEN_HEIGHT || screenX >= SCREEN_X + SCREEN_WIDTH)
-		return;
-
-	SDL_Rect src_rect = {
-		0,
-		static_cast<decltype(SDL_Rect().y)>(nFrame * art->h()),
-		static_cast<decltype(SDL_Rect().w)>(art->w()),
-		static_cast<decltype(SDL_Rect().h)>(art->h())
-	};
-	if (drawW && static_cast<int>(drawW) < src_rect.w)
-		src_rect.w = drawW;
-	SDL_Rect dst_rect = {
-		static_cast<decltype(SDL_Rect().x)>(screenX + SCREEN_X),
-		static_cast<decltype(SDL_Rect().y)>(screenY + SCREEN_Y),
-		src_rect.w, src_rect.h
-	};
-
-	if (art->surface->format->BitsPerPixel == 8 && art->palette_version != pal_surface_palette_version) {
-#ifdef USE_SDL1
-		if (SDL_SetPalette(art->surface, SDL_LOGPAL, pal_surface->format->palette->colors, 0, 256) != 1)
-			SDL_Log(SDL_GetError());
-#else
-		if (SDL_SetSurfacePalette(art->surface, pal_surface->format->palette) <= -1)
-			SDL_Log(SDL_GetError());
-#endif
-		art->palette_version = pal_surface_palette_version;
-	}
-
-	if (SDL_BlitSurface(art->surface, &src_rect, pal_surface, &dst_rect) <= -1) {
-		SDL_Log(SDL_GetError());
-	}
-}
-
 int GetCenterOffset(int w, int bw)
 {
 	if (bw == 0) {
@@ -605,141 +489,17 @@ int GetCenterOffset(int w, int bw)
 	return (bw - w) / 2;
 }
 
-int GetStrWidth(const char *str, int size)
-{
-	int strWidth = 0;
-
-	for (size_t i = 0, n = strlen(str); i < n; i++) {
-		BYTE w = FontTables[size][*(BYTE *)&str[i] + 2];
-		if (w)
-			strWidth += w;
-		else
-			strWidth += FontTables[size][0];
-	}
-
-	return strWidth;
-}
-
-int TextAlignment(const char *text, int rect_w, TXT_JUST align, _artFontTables size)
-{
-	if (align != JustLeft) {
-		int w = GetStrWidth(text, size);
-		if (align == JustCentre) {
-			return GetCenterOffset(w, rect_w);
-		} else if (align == JustRight) {
-			return rect_w - w;
-		}
-	}
-
-	return 0;
-}
-
-void WordWrap(UiText *item)
-{
-	char *text = const_cast<char *>(item->text);
-	const std::size_t len = strlen(text);
-	std::size_t lineStart = 0;
-	for (std::size_t i = 0; i <= len; i++) {
-		if (text[i] == '\n') {
-			lineStart = i + 1;
-			continue;
-		} else if (text[i] != ' ' && i != len) {
-			continue;
-		}
-
-		if (i != len)
-			text[i] = '\0';
-		if (GetStrWidth(&text[lineStart], AFT_SMALL) <= item->rect.w) {
-			if (i != len)
-				text[i] = ' ';
-			continue;
-		}
-
-		std::size_t j;
-		for (j = i; j >= lineStart; j--) {
-			if (text[j] == ' ') {
-				break; // Scan for previous space
-			}
-		}
-
-		if (j == lineStart) { // Single word longer then width
-			if (i == len)
-				break;
-			j = i;
-		}
-
-		if (i != len)
-			text[i] = ' ';
-		text[j] = '\n';
-		lineStart = j + 1;
-	}
-};
-
-void DrawArtStr(const char *text, const SDL_Rect &rect, int flags, bool drawTextCursor = false)
-{
-	_artFontTables size = AFT_SMALL;
-	_artFontColors color = flags & UIS_GOLD ? AFC_GOLD : AFC_SILVER;
-	TXT_JUST align = JustLeft;
-
-	if (flags & UIS_MED)
-		size = AFT_MED;
-	else if (flags & UIS_BIG)
-		size = AFT_BIG;
-	else if (flags & UIS_HUGE)
-		size = AFT_HUGE;
-
-	if (flags & UIS_CENTER)
-		align = JustCentre;
-	else if (flags & UIS_RIGHT)
-		align = JustRight;
-
-	int x = rect.x + TextAlignment(text, rect.w, align, size);
-
-	int sx = x;
-	int sy = rect.y;
-	if (flags & UIS_VCENTER)
-		sy += (rect.h - ArtFonts[size][color].h()) / 2;
-
-	for (size_t i = 0, n = strlen(text); i < n; i++) {
-		if (text[i] == '\n') {
-			sx = x;
-			sy += ArtFonts[size][color].h();
-			continue;
-		}
-		BYTE w = FontTables[size][*(BYTE *)&text[i] + 2] ? FontTables[size][*(BYTE *)&text[i] + 2] : FontTables[size][0];
-		DrawArt(sx, sy, &ArtFonts[size][color], *(BYTE *)&text[i], w);
-		sx += w;
-	}
-	if (drawTextCursor && GetAnimationFrame(2, 500)) {
-		DrawArt(sx, sy, &ArtFonts[size][color], '|');
-	}
-}
-
-void LoadPalInMem(PALETTEENTRY *pPal)
-{
-	for (int i = 0; i < 256; i++) {
-		orig_palette[i].peFlags = 0;
-		orig_palette[i].peRed = pPal[i].peRed;
-		orig_palette[i].peGreen = pPal[i].peGreen;
-		orig_palette[i].peBlue = pPal[i].peBlue;
-	}
-}
-
 void LoadBackgroundArt(char *pszFile)
 {
 	PALETTEENTRY pPal[256];
 
 	fadeValue = 0;
 	LoadArt(pszFile, &ArtBackground, 1, pPal);
+	if (ArtBackground.surface == nullptr)
+		return;
+
 	LoadPalInMem(pPal);
 	ApplyGamma(logical_palette, orig_palette, 256);
-}
-
-int GetAnimationFrame(int frames, int fps)
-{
-	int frame = (SDL_GetTicks() / fps) % frames;
-
-	return frame > frames ? 0 : frame;
 }
 
 void UiFadeIn(int steps)
@@ -770,31 +530,49 @@ void DrawSelector(const SDL_Rect &rect)
 	DrawArt(rect.x + rect.w - art->w(), y, art, frame);
 }
 
-void UiRender()
+void UiPollAndRender()
 {
 	SDL_Event event;
 	while (SDL_PollEvent(&event)) {
 		UiFocusNavigation(&event);
 	}
 	UiRenderItems(gUiItems, gUiItemCnt);
-	DrawLogo();
 	DrawMouse();
 	UiFadeIn();
 }
 
 namespace {
 
-void Render(const UiText &ui_text)
+void Render(UiText *ui_text)
 {
-	DrawArtStr(ui_text.text, ui_text.rect, ui_text.flags);
+	DrawTTF(ui_text->text,
+	    ui_text->rect,
+	    ui_text->flags,
+	    ui_text->color,
+	    ui_text->shadow_color,
+	    &ui_text->render_cache);
+}
+
+void Render(const UiArtText &ui_art_text)
+{
+	DrawArtStr(ui_art_text.text, ui_art_text.rect, ui_art_text.flags);
 }
 
 void Render(const UiImage &ui_image)
 {
-	DrawArt(ui_image.rect.x, ui_image.rect.y, ui_image.art, ui_image.frame, ui_image.rect.w);
+	int x = ui_image.rect.x;
+	if ((ui_image.flags & UIS_CENTER) && ui_image.art != nullptr) {
+		const int x_offset = GetCenterOffset(ui_image.art->w(), ui_image.rect.w);
+		x += x_offset;
+	}
+	if (ui_image.animated) {
+		DrawAnimatedArt(ui_image.art, x, ui_image.rect.y);
+	} else {
+		DrawArt(x, ui_image.rect.y, ui_image.art, ui_image.frame, ui_image.rect.w);
+	}
 }
 
-void Render(const UiButton &ui_button)
+void Render(const UiArtTextButton &ui_button)
 {
 	DrawArtStr(ui_button.text, ui_button.rect, ui_button.flags);
 }
@@ -810,6 +588,39 @@ void Render(const UiList &ui_list)
 	}
 }
 
+void Render(const UiScrollBar &ui_sb)
+{
+	// Bar background (tiled):
+	{
+		const std::size_t bg_y_end = DownArrowRect(ui_sb).y;
+		std::size_t bg_y = ui_sb.rect.y + ui_sb.arrow->h();
+		while (bg_y < bg_y_end) {
+			std::size_t drawH = std::min(bg_y + ui_sb.bg->h(), bg_y_end) - bg_y;
+			DrawArt(ui_sb.rect.x, bg_y, ui_sb.bg, 0, SCROLLBAR_BG_WIDTH, drawH);
+			bg_y += drawH;
+		}
+	}
+
+	// Arrows:
+	{
+		const SDL_Rect rect = UpArrowRect(ui_sb);
+		const int frame = static_cast<int>(scrollBarState.upArrowPressed ? ScrollBarArrowFrame::UP_ACTIVE : ScrollBarArrowFrame::UP);
+		DrawArt(rect.x, rect.y, ui_sb.arrow, frame, rect.w);
+	}
+	{
+		const SDL_Rect rect = DownArrowRect(ui_sb);
+		const int frame = static_cast<int>(scrollBarState.downArrowPressed ? ScrollBarArrowFrame::DOWN_ACTIVE : ScrollBarArrowFrame::DOWN);
+		DrawArt(rect.x, rect.y, ui_sb.arrow, frame, rect.w);
+	}
+
+	// Thumb:
+	{
+		const SDL_Rect rect = ThumbRect(
+		    ui_sb, SelectedItem - SelectedItemMin, SelectedItemMax - SelectedItemMin + 1);
+		DrawArt(rect.x, rect.y, ui_sb.thumb);
+	}
+}
+
 void Render(const UiEdit &ui_edit)
 {
 	DrawSelector(ui_edit.rect);
@@ -820,37 +631,50 @@ void Render(const UiEdit &ui_edit)
 	DrawArtStr(ui_edit.value, rect, ui_edit.flags, /*drawTextCursor=*/true);
 }
 
-void RenderItem(const UiItem &item)
+void RenderItem(UiItem *item)
 {
-	if (item.flags() & UIS_HIDDEN)
+	if (item->has_flag(UIS_HIDDEN))
 		return;
-	switch (item.type) {
+	switch (item->type) {
 	case UI_TEXT:
-		Render(item.text);
+		Render(&item->text);
+		break;
+	case UI_ART_TEXT:
+		Render(item->art_text);
 		break;
 	case UI_IMAGE:
-		Render(item.image);
+		Render(item->image);
+		break;
+	case UI_ART_TEXT_BUTTON:
+		Render(item->art_text_button);
 		break;
 	case UI_BUTTON:
-		Render(item.button);
+		RenderButton(&item->button);
 		break;
 	case UI_LIST:
-		Render(item.list);
+		Render(item->list);
+		break;
+	case UI_SCROLLBAR:
+		Render(item->scrollbar);
 		break;
 	case UI_EDIT:
-		Render(item.edit);
+		Render(item->edit);
 		break;
 	}
 }
 
-bool HandleMouseEventButton(const SDL_Event &event, const UiButton &ui_button)
+bool HandleMouseEventArtTextButton(const SDL_Event &event, const UiArtTextButton &ui_button)
 {
+	if (event.type != SDL_MOUSEBUTTONDOWN || event.button.button != SDL_BUTTON_LEFT)
+		return false;
 	ui_button.action();
 	return true;
 }
 
 bool HandleMouseEventList(const SDL_Event &event, const UiList &ui_list)
 {
+	if (event.type != SDL_MOUSEBUTTONDOWN || event.button.button != SDL_BUTTON_LEFT)
+		return false;
 	const UiListItem *list_item = ui_list.itemAt(event.button.y);
 	if (gfnListFocus != NULL && SelectedItem != list_item->value) {
 		UiFocus(list_item->value);
@@ -865,15 +689,53 @@ bool HandleMouseEventList(const SDL_Event &event, const UiList &ui_list)
 	return true;
 }
 
-bool HandleMouseEvent(const SDL_Event &event, const UiItem &item)
+bool HandleMouseEventScrollBar(const SDL_Event &event, const UiScrollBar &ui_sb)
 {
-	if (!IsInsideRect(event, item.rect()))
+	if (event.button.button != SDL_BUTTON_LEFT)
 		return false;
-	switch (item.type) {
+	if (event.type == SDL_MOUSEBUTTONUP) {
+		if (scrollBarState.upArrowPressed && IsInsideRect(event, UpArrowRect(ui_sb))) {
+			UiFocus(SelectedItem - 1);
+			return true;
+		} else if (scrollBarState.downArrowPressed && IsInsideRect(event, DownArrowRect(ui_sb))) {
+			UiFocus(SelectedItem + 1);
+			return true;
+		}
+	} else if (event.type == SDL_MOUSEBUTTONDOWN) {
+		if (IsInsideRect(event, BarRect(ui_sb))) {
+			// Scroll up or down based on thumb position.
+			const SDL_Rect thumb_rect = ThumbRect(
+			    ui_sb, SelectedItem - SelectedItemMin, SelectedItemMax - SelectedItemMin + 1);
+			if (event.button.y < thumb_rect.y) {
+				UiFocusPageUp();
+			} else if (event.button.y > thumb_rect.y + thumb_rect.h) {
+				UiFocusPageDown();
+			}
+			return true;
+		} else if (IsInsideRect(event, UpArrowRect(ui_sb))) {
+			scrollBarState.upArrowPressed = true;
+			return true;
+		} else if (IsInsideRect(event, DownArrowRect(ui_sb))) {
+			scrollBarState.downArrowPressed = true;
+			return true;
+		}
+	}
+	return false;
+}
+
+bool HandleMouseEvent(const SDL_Event &event, UiItem *item)
+{
+	if (item->has_any_flag(UIS_HIDDEN | UIS_DISABLED) || !IsInsideRect(event, item->rect()))
+		return false;
+	switch (item->type) {
+	case UI_ART_TEXT_BUTTON:
+		return HandleMouseEventArtTextButton(event, item->art_text_button);
 	case UI_BUTTON:
-		return HandleMouseEventButton(event, item.button);
+		return HandleMouseEventButton(event, &item->button);
 	case UI_LIST:
-		return HandleMouseEventList(event, item.list);
+		return HandleMouseEventList(event, item->list);
+	case UI_SCROLLBAR:
+		return HandleMouseEventScrollBar(event, item->scrollbar);
 	default:
 		return false;
 	}
@@ -881,29 +743,45 @@ bool HandleMouseEvent(const SDL_Event &event, const UiItem &item)
 
 } // namespace
 
-void UiRenderItems(UiItem *items, int size)
+void LoadPalInMem(const PALETTEENTRY *pPal)
 {
-	for (int i = 0; i < size; i++)
-		RenderItem(items[i]);
+	for (int i = 0; i < 256; i++) {
+		orig_palette[i].peFlags = 0;
+		orig_palette[i].peRed = pPal[i].peRed;
+		orig_palette[i].peGreen = pPal[i].peGreen;
+		orig_palette[i].peBlue = pPal[i].peBlue;
+	}
 }
 
-bool UiItemMouseEvents(SDL_Event *event, UiItem *items, int size)
+void UiRenderItems(UiItem *items, std::size_t size)
 {
-	if (event->type != SDL_MOUSEBUTTONDOWN || event->button.button != SDL_BUTTON_LEFT) {
+	for (std::size_t i = 0; i < size; i++)
+		RenderItem(&items[i]);
+}
+
+bool UiItemMouseEvents(SDL_Event *event, UiItem *items, std::size_t size)
+{
+	if (!items || size == 0)
 		return false;
+
+	bool handled = false;
+	for (std::size_t i = 0; i < size; i++) {
+		if (HandleMouseEvent(*event, &items[i])) {
+			handled = true;
+			break;
+		}
 	}
 
-	for (int i = 0; i < size; i++) {
-		if (HandleMouseEvent(*event, items[i]))
-			return true;
+	if (event->type == SDL_MOUSEBUTTONUP && event->button.button == SDL_BUTTON_LEFT) {
+		scrollBarState.downArrowPressed = scrollBarState.upArrowPressed = false;
+		for (std::size_t i = 0; i < size; ++i) {
+			UiItem &item = items[i];
+			if (item.type == UI_BUTTON)
+				HandleGlobalMouseUpButton(&item.button);
+		}
 	}
 
-	return false;
-}
-
-void DrawLogo(int t, int size)
-{
-	DrawArt(GetCenterOffset(ArtLogos[size].w()), t, &ArtLogos[size], GetAnimationFrame(15));
+	return handled;
 }
 
 void DrawMouse()
@@ -946,4 +824,4 @@ void DvlStringSetting(const char *valuename, char *string, int len)
 		SRegSaveString("devilutionx", valuename, 0, string);
 	}
 }
-}
+} // namespace dvl

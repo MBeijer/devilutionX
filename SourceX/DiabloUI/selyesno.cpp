@@ -1,7 +1,8 @@
 #include "selyesno.h"
 
-#include "DiabloUI/diabloui.h"
 #include "devilution.h"
+#include "DiabloUI/diabloui.h"
+#include "DiabloUI/text.h"
 
 namespace dvl {
 
@@ -18,12 +19,13 @@ UiListItem SELYESNO_DIALOG_ITEMS[] = {
 };
 
 UiItem SELYESNO_DIALOG[] = {
-	UiImage(&ArtBackground, { 0, 0, 640, 480 }),
-	UiText(selyesno_title, { 24, 161, 590, 35 }, UIS_CENTER | UIS_BIG),
-	UiText(selyesno_confirmationMessage, { 120, 236, 280, 168 }, UIS_MED),
+	MAINMENU_BACKGROUND,
+	MAINMENU_LOGO,
+	UiArtText(selyesno_title, { 24, 161, 590, 35 }, UIS_CENTER | UIS_BIG),
+	UiArtText(selyesno_confirmationMessage, { 120, 236, 280, 168 }, UIS_MED),
 	UiList(SELYESNO_DIALOG_ITEMS, 230, 390, 180, 35, UIS_CENTER | UIS_BIG | UIS_GOLD)
 };
-UiText *SELYESNO_DIALOG_CONFIRMATION_MESSAGE = &SELYESNO_DIALOG[2].text;
+UiArtText *SELYESNO_DIALOG_CONFIRMATION_MESSAGE = &SELYESNO_DIALOG[3].art_text;
 
 void selyesno_Free()
 {
@@ -59,14 +61,14 @@ BOOL UiSelHeroDelYesNoDialog(
 	}
 
 	sprintf(selyesno_confirmationMessage, "Are you sure you want to delete the character \"%s\"?", selyesno_heroInfo.name);
-	WordWrap(SELYESNO_DIALOG_CONFIRMATION_MESSAGE);
+	WordWrapArtStr(selyesno_confirmationMessage, SELYESNO_DIALOG_CONFIRMATION_MESSAGE->rect.w);
 
-	UiInitList(0, 1, NULL, selyesno_Select, selyesno_Esc, SELYESNO_DIALOG, size(SELYESNO_DIALOG), false, NULL);
+	UiInitList(0, 1, NULL, selyesno_Select, selyesno_Esc, SELYESNO_DIALOG, size(SELYESNO_DIALOG), true, NULL);
 
 	selyesno_endMenu = false;
 	while (!selyesno_endMenu) {
 		UiRenderItems(SELYESNO_DIALOG, size(SELYESNO_DIALOG));
-		UiRender();
+		UiPollAndRender();
 	}
 
 	BlackPalette();

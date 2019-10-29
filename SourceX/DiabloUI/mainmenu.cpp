@@ -15,9 +15,10 @@ UiListItem MAINMENU_DIALOG_ITEMS[] = {
 	{"Exit Diablo", MAINMENU_EXIT_DIABLO}
 };
 UiItem MAINMENU_DIALOG[] = {
-	UiImage(&ArtBackground, { 0, 0, 640, 480 }),
+	MAINMENU_BACKGROUND,
+	MAINMENU_LOGO,
 	UiList(MAINMENU_DIALOG_ITEMS, 64, 192, 510, 43, UIS_HUGE | UIS_GOLD | UIS_CENTER),
-	UiText(nullptr, { 17, 444, 605, 21 }, UIS_SMALL)
+	UiArtText(nullptr, { 17, 444, 605, 21 }, UIS_SMALL)
 };
 
 void UiMainMenuSelect(int value)
@@ -38,7 +39,7 @@ void mainmenu_restart_repintro()
 void mainmenu_Load(char *name, void (*fnSound)(char *file))
 {
 	gfnSoundFunction = fnSound;
-	MAINMENU_DIALOG[size(MAINMENU_DIALOG) - 1].text.text = name;
+	MAINMENU_DIALOG[size(MAINMENU_DIALOG) - 1].art_text.text = name;
 
 	MainMenuResult = 0;
 
@@ -63,7 +64,7 @@ BOOL UiMainMenuDialog(char *name, int *pdwResult, void (*fnSound)(char *file), i
 	mainmenu_restart_repintro(); // for automatic starts
 
 	while (MainMenuResult == 0) {
-		UiRender();
+		UiPollAndRender();
 		if (GetTickCount() >= dwAttractTicks) {
 			MainMenuResult = MAINMENU_ATTRACT_MODE;
 		}

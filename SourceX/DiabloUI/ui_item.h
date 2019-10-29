@@ -1,20 +1,26 @@
 #pragma once
 
 #include <cstdint>
+#include <cstddef>
 #include <string>
 #include <vector>
 
 #include "devilution.h"
-#include "art.h"
 #include "stubs.h"
+
+#include "DiabloUI/art.h"
+#include "DiabloUI/text_draw.h"
 
 namespace dvl {
 
 enum UiType {
 	UI_TEXT,
+	UI_ART_TEXT,
+	UI_ART_TEXT_BUTTON,
 	UI_IMAGE,
 	UI_BUTTON,
 	UI_LIST,
+	UI_SCROLLBAR,
 	UI_EDIT,
 };
 
@@ -28,11 +34,8 @@ enum UiFlags {
 	UIS_VCENTER = 1 << 6,
 	UIS_SILVER = 1 << 7,
 	UIS_GOLD = 1 << 8,
-	UIS_SML1 = 1 << 9,
-	UIS_SML2 = 1 << 10,
-	UIS_LIST = 1 << 11,
-	UIS_DISABLED = 1 << 12,
-	UIS_HIDDEN = 1 << 13,
+	UIS_DISABLED = 1 << 9,
+	UIS_HIDDEN = 1 << 10,
 };
 
 struct UiItemBase {
@@ -41,29 +44,88 @@ struct UiItemBase {
 	    , flags(flags)
 	{
 	}
+
+	bool has_flag(UiFlags flag) const
+	{
+		return flags & flag;
+	}
+
+	bool has_any_flag(int flags) const
+	{
+		return (this->flags & flags) != 0;
+	}
+
+	void add_flag(UiFlags flag)
+	{
+		flags |= flag;
+	}
+
+	void remove_flag(UiFlags flag)
+	{
+		flags &= ~flag;
+	}
+
 	SDL_Rect rect;
 	int flags;
 };
 
 struct UiImage : public UiItemBase {
+	constexpr UiImage(Art *art, bool animated, int frame, SDL_Rect rect, int flags = 0)
+	    : UiItemBase(rect, flags)
+	    , art(art)
+	    , animated(animated)
+	    , frame(frame)
+	{
+	}
+
+	constexpr UiImage(Art *art, int frame, SDL_Rect rect, int flags = 0)
+	    : UiImage(art, /*animated=*/false, frame, rect, flags)
+	{
+	}
+
 	constexpr UiImage(Art *art, SDL_Rect rect, int flags = 0)
 	    : UiImage(art, /*frame=*/0, rect, flags)
 	{
 	}
 
-	constexpr UiImage(Art *art, int frame, SDL_Rect rect, int flags = 0)
-	    : UiItemBase(rect, flags)
-	    , art(art)
-	    , frame(frame)
-	{
-	}
-
 	Art *art;
+	bool animated;
 	int frame;
 };
 
+// Plain text (TTF).
 struct UiText : public UiItemBase {
+	constexpr UiText(const char *text, SDL_Color color, SDL_Rect rect, int flags = 0)
+	    : UiItemBase(rect, flags)
+	    , color(color)
+	    , shadow_color { 0, 0, 0, 0 }
+	    , text(text)
+	    , render_cache(nullptr)
+	{
+	}
+
 	constexpr UiText(const char *text, SDL_Rect rect, int flags = 0)
+	    : UiText(text, SDL_Color { 243, 243, 243, 0 }, rect, flags)
+	{
+	}
+
+	SDL_Color color;
+	SDL_Color shadow_color;
+	const char *text;
+
+	// State:
+	TtfSurfaceCache *render_cache;
+
+	void FreeCache()
+	{
+		delete render_cache;
+		render_cache = nullptr;
+	}
+};
+
+// Text drawn with Diablo sprites.
+struct UiArtText : public UiItemBase {
+	constexpr UiArtText(const char *text, SDL_Rect rect, int flags = 0)
 	    : UiItemBase(rect, flags)
 	    , text(text)
 	{
@@ -72,8 +134,9 @@ struct UiText : public UiItemBase {
 	const char *text;
 };
 
-struct UiButton : public UiItemBase {
-	constexpr UiButton(const char *text, void (*action)(), SDL_Rect rect, int flags = 0)
+// Clickable Diablo sprites text.
+struct UiArtTextButton : public UiItemBase {
+	constexpr UiArtTextButton(const char *text, void (*action)(), SDL_Rect rect, int flags = 0)
 	    : UiItemBase(rect, flags)
 	    , text(text)
 	    , action(action)
@@ -82,6 +145,40 @@ struct UiButton : public UiItemBase {
 
 	const char *text;
 	void (*action)();
+};
+
+// A button (uses Diablo sprites).
+struct UiButton : public UiItemBase {
+	enum FrameKey {
+		DEFAULT = 0,
+		PRESSED,
+		DISABLED
+	};
+
+	constexpr UiButton(Art *art, const char *text, void (*action)(), SDL_Rect rect, int flags = 0)
+	    : UiItemBase(rect, flags)
+	    , art(art)
+	    , text(text)
+	    , action(action)
+	    , pressed(false)
+	    , render_cache(nullptr)
+	{
+	}
+
+	Art *art;
+
+	const char *text;
+	void (*action)();
+
+	// State
+	bool pressed;
+	TtfSurfaceCache *render_cache;
+
+	void FreeCache()
+	{
+		delete render_cache;
+		render_cache = nullptr;
+	}
 };
 
 struct UiListItem {
@@ -134,6 +231,20 @@ struct UiList : public UiItemBase {
 	}
 };
 
+struct UiScrollBar : public UiItemBase {
+	constexpr UiScrollBar(Art *bg, Art *thumb, Art *arrow, SDL_Rect rect, int flags = 0)
+	    : UiItemBase(rect, flags)
+	    , bg(bg)
+	    , thumb(thumb)
+	    , arrow(arrow)
+	{
+	}
+
+	Art *bg;
+	Art *thumb;
+	Art *arrow;
+};
+
 struct UiEdit : public UiItemBase {
 	constexpr UiEdit(char *value, std::size_t max_length, SDL_Rect rect, int flags)
 	    : UiItemBase(rect, flags)
@@ -151,6 +262,18 @@ struct UiItem {
 	constexpr UiItem(UiText text)
 	    : type(UI_TEXT)
 	    , text(text)
+	{
+	}
+
+	constexpr UiItem(UiArtText text)
+	    : type(UI_ART_TEXT)
+	    , art_text(text)
+	{
+	}
+
+	constexpr UiItem(UiArtTextButton art_text_button)
+	    : type(UI_ART_TEXT_BUTTON)
+	    , art_text_button(art_text_button)
 	{
 	}
 
@@ -172,6 +295,12 @@ struct UiItem {
 	{
 	}
 
+	constexpr UiItem(UiScrollBar scrollbar)
+	    : type(UI_SCROLLBAR)
+	    , scrollbar(scrollbar)
+	{
+	}
+
 	constexpr UiItem(UiEdit edit)
 	    : type(UI_EDIT)
 	    , edit(edit)
@@ -181,21 +310,43 @@ struct UiItem {
 	UiType type;
 	union {
 		UiText text;
+		UiArtText art_text;
 		UiImage image;
+		UiArtTextButton art_text_button;
 		UiButton button;
 		UiList list;
+		UiScrollBar scrollbar;
 		UiEdit edit;
 		UiItemBase common;
 	};
 
-	int flags() const
+	bool has_flag(UiFlags flag) const
 	{
-		return common.flags;
+		return common.has_flag(flag);
+	}
+
+	bool has_any_flag(int flags) const
+	{
+		return common.has_any_flag(flags);
 	}
 
 	const SDL_Rect &rect() const
 	{
 		return common.rect;
+	}
+
+	void FreeCache()
+	{
+		switch (type) {
+		case UI_BUTTON:
+			button.FreeCache();
+			break;
+		case UI_TEXT:
+			text.FreeCache();
+			break;
+		default:
+			break;
+		}
 	}
 };
 

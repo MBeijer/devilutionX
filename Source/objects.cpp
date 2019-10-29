@@ -1851,8 +1851,7 @@ void ObjSetMini(int x, int y, int v)
 	WORD *MegaTiles;
 
 	MegaTiles = (WORD *)&pMegaTiles[((WORD)v - 1) * 8];
-
-	v1 = SDL_SwapLE16(*(MegaTiles)) + 1;
+	v1 = SDL_SwapLE16(*(MegaTiles + 0)) + 1;
 	v2 = SDL_SwapLE16(*(MegaTiles + 1)) + 1;
 	v3 = SDL_SwapLE16(*(MegaTiles + 2)) + 1;
 	v4 = SDL_SwapLE16(*(MegaTiles + 3)) + 1;

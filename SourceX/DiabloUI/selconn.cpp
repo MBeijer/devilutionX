@@ -2,6 +2,7 @@
 
 #include "devilution.h"
 #include "DiabloUI/diabloui.h"
+#include "DiabloUI/text.h"
 
 namespace dvl {
 
@@ -17,7 +18,7 @@ _SNETVERSIONDATA *selconn_FileInfo;
 
 DWORD provider;
 
-UiText SELCONNECT_DIALOG_DESCRIPTION(selconn_Description, { 35, 275, 205, 66 });
+UiArtText SELCONNECT_DIALOG_DESCRIPTION(selconn_Description, { 35, 275, 205, 66 });
 UiListItem SELCONN_DIALOG_ITEMS[] = {
 #ifndef NONET
 	{ "Client-Server (TCP)", 0 },
@@ -28,18 +29,19 @@ UiListItem SELCONN_DIALOG_ITEMS[] = {
 #endif
 };
 UiItem SELCONNECT_DIALOG[] = {
-	UiImage(&ArtBackground, { 0, 0, 640, 480 }),
-	UiText("Multi Player Game", { 24, 161, 590, 35 }, UIS_CENTER | UIS_BIG),
-	UiText(selconn_MaxPlayers, { 35, 218, 205, 21 }),
-	UiText("Requirements:", { 35, 256, 205, 21 }),
+	MAINMENU_BACKGROUND,
+	MAINMENU_LOGO,
+	UiArtText("Multi Player Game", { 24, 161, 590, 35 }, UIS_CENTER | UIS_BIG),
+	UiArtText(selconn_MaxPlayers, { 35, 218, 205, 21 }),
+	UiArtText("Requirements:", { 35, 256, 205, 21 }),
 	SELCONNECT_DIALOG_DESCRIPTION,
-	UiText("no gateway needed", { 30, 356, 220, 31 }, UIS_CENTER | UIS_MED),
-	UiText(selconn_Gateway, { 35, 393, 205, 21 }, UIS_CENTER),
-	UiText("Select Connection", { 300, 211, 295, 33 }, UIS_CENTER | UIS_BIG),
-	UiButton("Change Gateway", nullptr, { 16, 427, 250, 35 }, UIS_CENTER | UIS_VCENTER | UIS_BIG | UIS_GOLD | UIS_HIDDEN),
+	UiArtText("no gateway needed", { 30, 356, 220, 31 }, UIS_CENTER | UIS_MED),
+	UiArtText(selconn_Gateway, { 35, 393, 205, 21 }, UIS_CENTER),
+	UiArtText("Select Connection", { 300, 211, 295, 33 }, UIS_CENTER | UIS_BIG),
+	UiArtTextButton("Change Gateway", nullptr, { 16, 427, 250, 35 }, UIS_CENTER | UIS_VCENTER | UIS_BIG | UIS_GOLD | UIS_HIDDEN),
 	UiList(SELCONN_DIALOG_ITEMS, 305, 256, 285, 26, UIS_CENTER | UIS_VCENTER | UIS_GOLD),
-	UiButton("OK", &UiFocusNavigationSelect, { 299, 427, 140, 35 }, UIS_CENTER | UIS_VCENTER | UIS_BIG | UIS_GOLD),
-	UiButton("Cancel", &UiFocusNavigationEsc, { 454, 427, 140, 35 }, UIS_CENTER | UIS_VCENTER | UIS_BIG | UIS_GOLD)
+	UiArtTextButton("OK", &UiFocusNavigationSelect, { 299, 427, 140, 35 }, UIS_CENTER | UIS_VCENTER | UIS_BIG | UIS_GOLD),
+	UiArtTextButton("Cancel", &UiFocusNavigationEsc, { 454, 427, 140, 35 }, UIS_CENTER | UIS_VCENTER | UIS_BIG | UIS_GOLD)
 };
 
 void selconn_Load()
@@ -78,7 +80,7 @@ void selconn_Focus(int value)
 	}
 
 	sprintf(selconn_MaxPlayers, "Players Supported: %d", players);
-	WordWrap(&SELCONNECT_DIALOG_DESCRIPTION);
+	WordWrapArtStr(selconn_Description, SELCONNECT_DIALOG_DESCRIPTION.rect.w);
 }
 
 void selconn_Select(int value)
@@ -117,7 +119,7 @@ int UiSelectProvider(
 	selconn_ReturnValue = true;
 	selconn_EndMenu = false;
 	while (!selconn_EndMenu) {
-		UiRender();
+		UiPollAndRender();
 	}
 	BlackPalette();
 	selconn_Free();

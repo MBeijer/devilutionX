@@ -1,7 +1,10 @@
 #include "selgame.h"
 
 #include "devilution.h"
+#include "config.h"
 #include "DiabloUI/diabloui.h"
+#include "DiabloUI/text.h"
+#include "DiabloUI/dialogs.h"
 
 namespace dvl {
 
@@ -18,21 +21,10 @@ int gbDifficulty;
 static _SNETPROGRAMDATA *m_client_info;
 extern DWORD provider;
 
-UiText SELGAME_DESCRIPTION(selgame_Description, { 35, 256, 205, 192 });
-UiListItem SELUDPGAME_DIALOG_ITEMS[] = {
-	{ "Create Game", 0 },
-	{ "Enter IP", 1 },
-};
-UiItem SELUDPGAME_DIALOG[] = {
-	UiImage(&ArtBackground, { 0, 0, 640, 480 }),
-	UiText("Join TCP/UDP Games", { 24, 161, 590, 35 }, UIS_CENTER | UIS_BIG),
-	UiText("Description:", { 35, 256, 205, 192 }, UIS_MED),
-	SELGAME_DESCRIPTION,
-	UiText("Select Action", { 300, 211, 295, 33 }, UIS_CENTER | UIS_BIG),
-	UiList(SELUDPGAME_DIALOG_ITEMS, 305, 255, 285, 26, UIS_CENTER | UIS_MED | UIS_GOLD),
-	UiButton("OK", &UiFocusNavigationSelect, { 299, 427, 140, 35 }, UIS_CENTER | UIS_VCENTER | UIS_BIG | UIS_GOLD),
-	UiButton("CANCEL", &UiFocusNavigationEsc, { 449, 427, 140, 35 }, UIS_CENTER | UIS_VCENTER | UIS_BIG | UIS_GOLD)
-};
+constexpr UiArtTextButton SELGAME_OK = UiArtTextButton("OK", &UiFocusNavigationSelect, { 299, 427, 140, 35 }, UIS_CENTER | UIS_VCENTER | UIS_BIG | UIS_GOLD);
+constexpr UiArtTextButton SELGAME_CANCEL = UiArtTextButton("CANCEL", &UiFocusNavigationEsc, { 449, 427, 140, 35 }, UIS_CENTER | UIS_VCENTER | UIS_BIG | UIS_GOLD);
+
+UiArtText SELGAME_DESCRIPTION(selgame_Description, { 35, 256, 205, 192 });
 
 UiListItem SELDIFF_DIALOG_ITEMS[] = {
 	{ "Normal", DIFF_NORMAL },
@@ -40,36 +32,58 @@ UiListItem SELDIFF_DIALOG_ITEMS[] = {
 	{ "Hell", DIFF_HELL }
 };
 UiItem SELDIFF_DIALOG[] = {
-	UiImage(&ArtBackground, { 0, 0, 640, 480 }),
-	UiText("Create Game", { 24, 161, 590, 35 }, UIS_CENTER | UIS_BIG),
-	UiText(selgame_Label, { 34, 211, 205, 33 }, UIS_CENTER | UIS_BIG), // DIFF
+	MAINMENU_BACKGROUND,
+	MAINMENU_LOGO,
+	UiArtText("Create Game", { 24, 161, 590, 35 }, UIS_CENTER | UIS_BIG),
+	UiArtText(selgame_Label, { 34, 211, 205, 33 }, UIS_CENTER | UIS_BIG), // DIFF
 	SELGAME_DESCRIPTION,
-	UiText("Select Difficulty", { 299, 211, 295, 35 }, UIS_CENTER | UIS_BIG),
+	UiArtText("Select Difficulty", { 299, 211, 295, 35 }, UIS_CENTER | UIS_BIG),
 	UiList(SELDIFF_DIALOG_ITEMS, 300, 282, 295, 26, UIS_CENTER | UIS_MED | UIS_GOLD),
-	UiButton("OK", &UiFocusNavigationSelect, { 299, 427, 140, 35 }, UIS_CENTER | UIS_VCENTER | UIS_BIG | UIS_GOLD),
-	UiButton("CANCEL", &UiFocusNavigationEsc, { 449, 427, 140, 35 }, UIS_CENTER | UIS_VCENTER | UIS_BIG | UIS_GOLD)
+	SELGAME_OK,
+	SELGAME_CANCEL,
+};
+
+constexpr UiArtText SELUDPGAME_TITLE = UiArtText("Join TCP/UDP Games", { 24, 161, 590, 35 }, UIS_CENTER | UIS_BIG);
+constexpr UiArtText SELUDPGAME_DESCRIPTION_LABEL = UiArtText("Description:", { 35, 211, 205, 192 }, UIS_MED);
+
+UiListItem SELUDPGAME_DIALOG_ITEMS[] = {
+	{ "Create Game", 0 },
+	{ "Enter IP", 1 },
+};
+UiItem SELUDPGAME_DIALOG[] = {
+	MAINMENU_BACKGROUND,
+	MAINMENU_LOGO,
+	SELUDPGAME_TITLE,
+	SELUDPGAME_DESCRIPTION_LABEL,
+	SELGAME_DESCRIPTION,
+	UiArtText("Select Action", { 300, 211, 295, 33 }, UIS_CENTER | UIS_BIG),
+	UiList(SELUDPGAME_DIALOG_ITEMS, 305, 255, 285, 26, UIS_CENTER | UIS_MED | UIS_GOLD),
+	SELGAME_OK,
+	SELGAME_CANCEL,
 };
 
 UiItem ENTERIP_DIALOG[] = {
-	UiImage(&ArtBackground, { 0, 0, 640, 480 }),
-	UiText("Join TCP/UDP Games", { 24, 161, 590, 35 }, UIS_CENTER | UIS_BIG),
-	UiText("Description:", { 35, 211, 205, 33 }, UIS_MED),
+	MAINMENU_BACKGROUND,
+	MAINMENU_LOGO,
+	SELUDPGAME_TITLE,
+	SELUDPGAME_DESCRIPTION_LABEL,
 	SELGAME_DESCRIPTION,
-	UiText("Enter IP", { 305, 211, 285, 33 }, UIS_CENTER | UIS_BIG),
-	UiEdit(selgame_Ip, 128, { 305, 314, 285, 33 }, UIS_LIST | UIS_MED | UIS_GOLD),
-	UiButton("OK", &UiFocusNavigationSelect, { 299, 427, 140, 35 }, UIS_CENTER | UIS_VCENTER | UIS_BIG | UIS_GOLD),
-	UiButton("CANCEL", &UiFocusNavigationEsc, { 449, 427, 140, 35 }, UIS_CENTER | UIS_VCENTER | UIS_BIG | UIS_GOLD)
+	UiArtText("Enter IP", { 305, 211, 285, 33 }, UIS_CENTER | UIS_BIG),
+	UiEdit(selgame_Ip, 128, { 305, 314, 285, 33 }, UIS_MED | UIS_GOLD),
+	SELGAME_OK,
+	SELGAME_CANCEL,
 };
 
 UiItem ENTERPASSWORD_DIALOG[] = {
-	UiImage(&ArtBackground, { 0, 0, 640, 480 }),
-	UiText("Join TCP/UDP Games", { 24, 161, 590, 35 }, UIS_CENTER | UIS_BIG),
-	UiText("Description:", { 35, 211, 205, 33 }, UIS_MED),
+	MAINMENU_BACKGROUND,
+	MAINMENU_LOGO,
+	SELUDPGAME_TITLE,
+	SELUDPGAME_DESCRIPTION_LABEL,
 	SELGAME_DESCRIPTION,
-	UiText("Enter Password", { 305, 211, 285, 33 }, UIS_CENTER | UIS_BIG),
-	UiEdit(selgame_Password, 15, { 305, 314, 285, 33 }, UIS_LIST | UIS_MED | UIS_GOLD),
-	UiButton("OK", &UiFocusNavigationSelect, { 299, 427, 140, 35 }, UIS_CENTER | UIS_VCENTER | UIS_BIG | UIS_GOLD),
-	UiButton("CANCEL", &UiFocusNavigationEsc, { 449, 427, 140, 35 }, UIS_CENTER | UIS_VCENTER | UIS_BIG | UIS_GOLD)
+	UiArtText("Enter Password", { 305, 211, 285, 33 }, UIS_CENTER | UIS_BIG),
+	UiEdit(selgame_Password, 15, { 305, 314, 285, 33 }, UIS_MED | UIS_GOLD),
+	SELGAME_OK,
+	SELGAME_CANCEL,
 };
 
 void selgame_Free()
@@ -102,7 +116,7 @@ void selgame_GameSelection_Focus(int value)
 		strcpy(selgame_Description, "Enter an IP and join a game already in progress at that address.");
 		break;
 	}
-	WordWrap(&SELGAME_DESCRIPTION);
+	WordWrapArtStr(selgame_Description, SELGAME_DESCRIPTION.rect.w);
 }
 
 void selgame_GameSelection_Select(int value)
@@ -143,7 +157,7 @@ void selgame_Diff_Focus(int value)
 		strcpy(selgame_Description, "Hell Difficulty\nThe most powerful of the underworld's creatures lurk at the gateway into Hell. Only the most experienced characters should venture in this realm.");
 		break;
 	}
-	WordWrap(&SELGAME_DESCRIPTION);
+	WordWrapArtStr(selgame_Description, SELGAME_DESCRIPTION.rect.w);
 }
 
 void selgame_Diff_Select(int value)
@@ -176,13 +190,16 @@ void selgame_Password_Init(int value)
 
 void selgame_Password_Select(int value)
 {
-	UiInitList(0, 0, NULL, NULL, NULL, NULL, 0);
-	selgame_endMenu = true;
-
 	if (selgame_selectedGame) {
 		SRegSaveString("Phone Book", "Entry1", 0, selgame_Ip);
-		if (!SNetJoinGame(selgame_selectedGame, selgame_Ip, selgame_Password, NULL, NULL, gdwPlayerId)) {
-			DrawDlg("Unable to establish a connection. A game of Devilution 0.2.0 was not detected at the specified IP address.");
+		if (SNetJoinGame(selgame_selectedGame, selgame_Ip, selgame_Password, NULL, NULL, gdwPlayerId)) {
+			UiInitList(0, 0, NULL, NULL, NULL, NULL, 0);
+			selgame_endMenu = true;
+		} else {
+			UiErrorOkDialog(
+			    "Unable to establish a connection.",
+			    PROJECT_NAME " v" PROJECT_VERSION " game not found or password invalid.",
+			    ENTERPASSWORD_DIALOG, size(ENTERPASSWORD_DIALOG));
 			selgame_Password_Init(selgame_selectedGame);
 		}
 		return;
@@ -191,8 +208,11 @@ void selgame_Password_Select(int value)
 	_gamedata *info = m_client_info->initdata;
 	info->bDiff = gbDifficulty;
 
-	if (!SNetCreateGame(NULL, selgame_Password, NULL, 0, (char *)info, sizeof(_gamedata), MAX_PLRS, NULL, NULL, gdwPlayerId)) {
-		DrawDlg("Unable to create game.");
+	if (SNetCreateGame(NULL, selgame_Password, NULL, 0, (char *)info, sizeof(_gamedata), MAX_PLRS, NULL, NULL, gdwPlayerId)) {
+		UiInitList(0, 0, NULL, NULL, NULL, NULL, 0);
+		selgame_endMenu = true;
+	} else {
+		UiErrorOkDialog("Unable to create game.", ENTERPASSWORD_DIALOG, size(ENTERPASSWORD_DIALOG));
 		selgame_Password_Init(0);
 	}
 }
@@ -212,12 +232,11 @@ int UiSelectGame(int a1, _SNETPROGRAMDATA *client_info, _SNETPLAYERDATA *user_in
 
 	selgame_endMenu = false;
 	while (!selgame_endMenu) {
-		UiRender();
+		UiPollAndRender();
 	}
 	BlackPalette();
 	selgame_Free();
 
 	return selgame_enteringGame;
 }
-
 }

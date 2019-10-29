@@ -1900,13 +1900,12 @@ void DRLG_L4Pass3()
 {
 	int i, j, xx, yy;
 	long v1, v2, v3, v4, lv;
+	WORD *MegaTiles;
 
 	lv = 30 - 1;
 
-	WORD *MegaTiles;
 	MegaTiles = (WORD *)&pMegaTiles[lv * 8];
-
-	v1 = SDL_SwapLE16(*(MegaTiles)) + 1;
+	v1 = SDL_SwapLE16(*(MegaTiles + 0)) + 1;
 	v2 = SDL_SwapLE16(*(MegaTiles + 1)) + 1;
 	v3 = SDL_SwapLE16(*(MegaTiles + 2)) + 1;
 	v4 = SDL_SwapLE16(*(MegaTiles + 3)) + 1;
@@ -1928,8 +1927,7 @@ void DRLG_L4Pass3()
 			lv = dungeon[i][j] - 1;
 			if (lv >= 0) {
 				MegaTiles = (WORD *)&pMegaTiles[lv * 8];
-
-				v1 = SDL_SwapLE16(*(MegaTiles)) + 1;
+				v1 = SDL_SwapLE16(*(MegaTiles + 0)) + 1;
 				v2 = SDL_SwapLE16(*(MegaTiles + 1)) + 1;
 				v3 = SDL_SwapLE16(*(MegaTiles + 2)) + 1;
 				v4 = SDL_SwapLE16(*(MegaTiles + 3)) + 1;
@@ -1948,6 +1946,6 @@ void DRLG_L4Pass3()
 		yy += 2;
 	}
 }
+#endif
 
 DEVILUTION_END_NAMESPACE
-#endif
