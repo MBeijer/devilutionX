@@ -14,7 +14,6 @@ int talker;
 STextStruct stext[24];
 char stextsize;
 int stextsmax;
-int InStoreFlag;
 ItemStruct storehold[48];
 int gossipstart;
 ItemStruct witchitem[20];
@@ -29,6 +28,8 @@ int stextsel;
 char stextscrldbtn;
 int gossipend;
 BYTE *pSPentSpn2Cels;
+BYTE PentSpn2Frame;
+DWORD PentSpn2Tick;
 int stextsval;
 int boylevel;
 ItemStruct smithitem[20];
@@ -36,32 +37,6 @@ int stextdown;
 char stextscrlubtn;
 char stextflag;
 
-int SStringY[24] = {
-	0,
-	12,
-	24,
-	36,
-	48,
-	60,
-	72,
-	84,
-	96,
-	108,
-	120,
-	132,
-	144,
-	156,
-	168,
-	180,
-	192,
-	204,
-	216,
-	228,
-	240,
-	252,
-	264,
-	276
-};
 char *talkname[9] = {
 	"Griswold",
 	"Pepin",
@@ -83,7 +58,7 @@ void InitStores()
 	pSTextSlidCels = LoadFileInMem("Data\\TextSlid.CEL", NULL);
 	ClearSText(0, 24);
 	stextflag = STORE_NONE;
-	InStoreFlag = 1;
+	PentSpn2Frame = 1;
 	stextsize = 0;
 	stextscrl = FALSE;
 	numpremium = 0;
@@ -94,6 +69,15 @@ void InitStores()
 
 	boyitem._itype = ITYPE_NONE;
 	boylevel = 0;
+}
+
+void PentSpn2Spin()
+{
+	DWORD ticks = GetTickCount();
+	if (ticks - PentSpn2Tick > 50) {
+		PentSpn2Frame = (PentSpn2Frame & 7) + 1;
+		PentSpn2Tick = ticks;
+	}
 }
 
 void SetupTownStores()
@@ -132,28 +116,24 @@ void FreeStoreMem()
 
 void DrawSTextBack()
 {
-	CelDecodeOnly(408, 487, pSTextBoxCels, 1, 271);
-
-#define TRANS_RECT_X 347
-#define TRANS_RECT_Y 28
-#define TRANS_RECT_WIDTH 265
-#define TRANS_RECT_HEIGHT 297
-#include "asm_trans_rect.inc"
+	CelDraw(PANEL_X + 344, 487, pSTextBoxCels, 1, 271);
+	trans_rect(PANEL_LEFT + 347, 28, 265, 297);
 }
 
 void PrintSString(int x, int y, BOOL cjustflag, char *str, char col, int val)
 {
 	int xx, yy;
-	int len, width, off, i, k, s;
+	int len, width, sx, sy, i, k, s;
 	BYTE c;
 	char valstr[32];
 
-	s = SStringY[y] + stext[y]._syoff;
+	s = y * 12 + stext[y]._syoff;
 	if (stextsize)
-		xx = 96;
+		xx = PANEL_X + 32;
 	else
-		xx = 416;
-	off = xx + x + PitchTbl[s + 204];
+		xx = PANEL_X + 352;
+	sx = xx + x;
+	sy = s + 204;
 	len = strlen(str);
 	if (stextsize)
 		yy = 577;
@@ -166,32 +146,32 @@ void PrintSString(int x, int y, BOOL cjustflag, char *str, char col, int val)
 			width += fontkern[fontframe[gbFontTransTbl[(BYTE)str[i]]]] + 1;
 		if (width < yy)
 			k = (yy - width) >> 1;
-		off += k;
+		sx += k;
 	}
 	if (stextsel == y) {
-		CelDecodeOnly(cjustflag ? xx + x + k - 20 : xx + x - 20, s + 205, pSPentSpn2Cels, InStoreFlag, 12);
+		CelDraw(cjustflag ? xx + x + k - 20 : xx + x - 20, s + 205, pSPentSpn2Cels, PentSpn2Frame, 12);
 	}
 	for (i = 0; i < len; i++) {
 		c = fontframe[gbFontTransTbl[(BYTE)str[i]]];
 		k += fontkern[c] + 1;
 		if (c && k <= yy) {
-			CPrintString(off, c, col);
+			CPrintString(sx, sy, c, col);
 		}
-		off += fontkern[c] + 1;
+		sx += fontkern[c] + 1;
 	}
 	if (!cjustflag && val >= 0) {
 		sprintf(valstr, "%i", val);
-		off = PitchTbl[s + 204] + 656 - x;
+		sx = PANEL_X + 592 - x;
 		for (i = strlen(valstr) - 1; i >= 0; i--) {
 			c = fontframe[gbFontTransTbl[(BYTE)valstr[i]]];
-			off -= fontkern[c] + 1;
+			sx -= fontkern[c] + 1;
 			if (c) {
-				CPrintString(off, c, col);
+				CPrintString(sx, sy, c, col);
 			}
 		}
 	}
 	if (stextsel == y) {
-		CelDecodeOnly(cjustflag ? xx + x + k + 4 : 660 - x, s + 205, pSPentSpn2Cels, InStoreFlag, 12);
+		CelDraw(cjustflag ? (xx + x + k + 4) : (PANEL_X + 596 - x), s + 205, pSPentSpn2Cels, PentSpn2Frame, 12);
 	}
 }
 
@@ -199,15 +179,15 @@ void DrawSLine(int y)
 {
 	int xy, yy, width, line, sy;
 
-	sy = SStringY[y];
+	sy = y * 12;
 	if (stextsize == 1) {
-		xy = SCREENXY(26, 25);
-		yy = PitchTbl[sy + 198] + 26 + 64;
+		xy = SCREENXY(PANEL_LEFT + 26, 25);
+		yy = BUFFER_WIDTH * (sy + 198) + 26 + PANEL_X;
 		width = 586 / 4;
 		line = BUFFER_WIDTH - 586;
 	} else {
-		xy = SCREENXY(346, 25);
-		yy = PitchTbl[sy + 198] + 346 + 64;
+		xy = SCREENXY(PANEL_LEFT + 346, 25);
+		yy = BUFFER_WIDTH * (sy + 198) + 346 + PANEL_X;
 		width = 266 / 4;
 		line = BUFFER_WIDTH - 266;
 	}
@@ -228,29 +208,29 @@ void DrawSArrows(int y1, int y2)
 {
 	int yd1, yd2, yd3;
 
-	yd1 = SStringY[y1] + 204;
-	yd2 = SStringY[y2] + 204;
+	yd1 = y1 * 12 + 204;
+	yd2 = y2 * 12 + 204;
 	if (stextscrlubtn != -1)
-		CelDecodeOnly(665, yd1, pSTextSlidCels, 12, 12);
+		CelDraw(PANEL_X + 601, yd1, pSTextSlidCels, 12, 12);
 	else
-		CelDecodeOnly(665, yd1, pSTextSlidCels, 10, 12);
+		CelDraw(PANEL_X + 601, yd1, pSTextSlidCels, 10, 12);
 	if (stextscrldbtn != -1)
-		CelDecodeOnly(665, yd2, pSTextSlidCels, 11, 12);
+		CelDraw(PANEL_X + 601, yd2, pSTextSlidCels, 11, 12);
 	else
-		CelDecodeOnly(665, yd2, pSTextSlidCels, 9, 12);
+		CelDraw(PANEL_X + 601, yd2, pSTextSlidCels, 9, 12);
 	yd1 += 12;
 	for (yd3 = yd1; yd3 < yd2; yd3 += 12) {
-		CelDecodeOnly(665, yd3, pSTextSlidCels, 14, 12);
+		CelDraw(PANEL_X + 601, yd3, pSTextSlidCels, 14, 12);
 	}
 	if (stextsel == 22)
 		yd3 = stextlhold;
 	else
 		yd3 = stextsel;
 	if (storenumh > 1)
-		yd3 = 1000 * (stextsval + ((yd3 - stextup) >> 2)) / (storenumh - 1) * (SStringY[y2] - SStringY[y1] - 24) / 1000;
+		yd3 = 1000 * (stextsval + ((yd3 - stextup) >> 2)) / (storenumh - 1) * (y2 * 12 - y1 * 12 - 24) / 1000;
 	else
 		yd3 = 0;
-	CelDecodeOnly(665, SStringY[y1 + 1] + 204 + yd3, pSTextSlidCels, 13, 12);
+	CelDraw(PANEL_X + 601, (y1 + 1) * 12 + 204 + yd3, pSTextSlidCels, 13, 12);
 }
 
 void DrawSTextHelp()
@@ -466,7 +446,7 @@ void PrintStoreItem(ItemStruct *x, int l, char iclr)
 		sprintf(sstr, "Damage: %i-%i  ", x->_iMinDam, x->_iMaxDam);
 	if (x->_iClass == ICLASS_ARMOR)
 		sprintf(sstr, "Armor: %i  ", x->_iAC);
-	if (x->_iMaxDur != 255 && x->_iMaxDur) {
+	if (x->_iMaxDur != DUR_INDESTRUCTIBLE && x->_iMaxDur) {
 		sprintf(tempstr, "Dur: %i/%i,  ", x->_iDurability, x->_iMaxDur);
 		strcat(sstr, tempstr);
 	} else {
@@ -721,7 +701,7 @@ void S_StartSRepair()
 	stextsize = 1;
 	repairok = FALSE;
 	storenumh = 0;
-	for (i = 0; i < 40; i++)
+	for (i = 0; i < 48; i++)
 		storehold[i]._itype = ITYPE_NONE;
 	if (plr[myplr].InvBody[INVLOC_HEAD]._itype != ITYPE_NONE && plr[myplr].InvBody[INVLOC_HEAD]._iDurability != plr[myplr].InvBody[INVLOC_HEAD]._iMaxDur) {
 		repairok = TRUE;
@@ -1567,7 +1547,7 @@ void DrawSText()
 	if (stextscrl)
 		DrawSArrows(4, 20);
 
-	InStoreFlag = (InStoreFlag & 7) + 1;
+	PentSpn2Spin();
 }
 
 void STextESC()
@@ -2590,7 +2570,7 @@ void S_TalkEnter()
 
 	if (stextsel == sn - 2) {
 		SetRndSeed(towner[talker]._tSeed);
-		tq = gossipstart + random(0, gossipend - gossipstart + 1);
+		tq = gossipstart + random_(0, gossipend - gossipstart + 1);
 		InitQTextMsg(tq);
 		return;
 	}
@@ -2748,14 +2728,14 @@ void CheckStoreBtn()
 			sfx_stop();
 	} else if (stextsel != -1 && MouseY >= 32 && MouseY <= 320) {
 		if (!stextsize) {
-			if (MouseX < 344 || MouseX > 616)
+			if (MouseX < 344 + PANEL_LEFT || MouseX > 616 + PANEL_LEFT)
 				return;
 		} else {
-			if (MouseX < 24 || MouseX > 616)
+			if (MouseX < 24 + PANEL_LEFT || MouseX > 616 + PANEL_LEFT)
 				return;
 		}
 		y = (MouseY - 32) / 12;
-		if (stextscrl && MouseX > 600) {
+		if (stextscrl && MouseX > 600 + PANEL_LEFT) {
 			if (y == 4) {
 				if (stextscrlubtn <= 0) {
 					STextUp();

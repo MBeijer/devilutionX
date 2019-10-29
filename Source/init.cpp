@@ -52,6 +52,8 @@ void init_create_window()
 		app_fatal("Unable to create main window");
 	dx_init(NULL);
 	gbActive = true;
+	gpBufStart = &gpBuffer[BUFFER_WIDTH * SCREEN_Y];
+	gpBufEnd = &gpBuffer[BUFFER_WIDTH * (SCREEN_HEIGHT + SCREEN_Y)];
 	SDL_DisableScreenSaver();
 }
 
@@ -68,7 +70,7 @@ void init_archives()
 #ifdef SPAWN
 		diabdat_mpq = init_test_access(diabdat_mpq_path, "spawn.mpq", "DiabloSpawn", 1000, FS_PC);
 #else
-		diabdat_mpq = init_test_access(diabdat_mpq_path, "diabdat.mpq", "DiabloCD", 1000, FS_PC);
+	diabdat_mpq = init_test_access(diabdat_mpq_path, "\\diabdat.mpq", "DiabloCD", 1000, FS_CD);
 #endif
 	if (!SFileOpenFile("ui_art\\title.pcx", &fh))
 #ifdef SPAWN
@@ -84,7 +86,7 @@ void init_archives()
 #endif
 }
 
-HANDLE init_test_access(char *mpq_path, char *mpq_name, char *reg_loc, int flags, int fs)
+HANDLE init_test_access(char *mpq_path, char *mpq_name, char *reg_loc, int dwPriority, int fs)
 {
 	char Buffer[2][MAX_PATH];
 	char *sdlPath;
@@ -95,11 +97,7 @@ HANDLE init_test_access(char *mpq_path, char *mpq_name, char *reg_loc, int flags
 
 	for (int i = 0; i < 2; i++) {
 		snprintf(mpq_path, MAX_PATH, "%s%s", Buffer[i], mpq_name);
-#ifdef __AMIGA__
-		if (SFileOpenArchive(mpq_path, flags, 0, &archive)) {
-#else
-		if (SFileOpenArchive(mpq_path, flags, MPQ_FLAG_READ_ONLY, &archive)) {
-#endif
+		if (SFileOpenArchive(mpq_path, dwPriority, MPQ_FLAG_READ_ONLY, &archive)) {
 			SFileSetBasePath(Buffer[i]);
 			return archive;
 		}
@@ -135,9 +133,11 @@ LRESULT __stdcall MainWndProc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam)
 #endif
 	case WM_QUERYNEWPALETTE:
 		return 1;
+	case WM_QUERYENDSESSION:
+		exit(0);
 	}
 
-	return DefWindowProc(hWnd, Msg, wParam, lParam);
+	return 0;
 }
 
 WNDPROC SetWindowProc(WNDPROC NewProc)

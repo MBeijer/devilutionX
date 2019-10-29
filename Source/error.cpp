@@ -84,37 +84,34 @@ void ClrDiabloMsg()
 
 void DrawDiabloMsg()
 {
-	int i, len, off, width, sx, sy;
+	int i, len, width, sx, sy;
 	BYTE c;
 
-	CelDecodeOnly(165, 318, pSTextSlidCels, 1, 12);
-	CelDecodeOnly(591, 318, pSTextSlidCels, 4, 12);
-	CelDecodeOnly(165, 366, pSTextSlidCels, 2, 12);
-	CelDecodeOnly(591, 366, pSTextSlidCels, 3, 12);
+	CelDraw(PANEL_X + 101, DIALOG_Y, pSTextSlidCels, 1, 12);
+	CelDraw(PANEL_X + 527, DIALOG_Y, pSTextSlidCels, 4, 12);
+	CelDraw(PANEL_X + 101, DIALOG_Y + 48, pSTextSlidCels, 2, 12);
+	CelDraw(PANEL_X + 527, DIALOG_Y + 48, pSTextSlidCels, 3, 12);
 
-	sx = 173;
+	sx = PANEL_X + 109;
 	for (i = 0; i < 35; i++) {
-		CelDecodeOnly(sx, 318, pSTextSlidCels, 5, 12);
-		CelDecodeOnly(sx, 366, pSTextSlidCels, 7, 12);
+		CelDraw(sx, DIALOG_Y, pSTextSlidCels, 5, 12);
+		CelDraw(sx, DIALOG_Y + 48, pSTextSlidCels, 7, 12);
 		sx += 12;
 	}
-	sy = 330;
+	sy = DIALOG_Y + 12;
 	for (i = 0; i < 3; i++) {
-		CelDecodeOnly(165, sy, pSTextSlidCels, 6, 12);
-		CelDecodeOnly(591, sy, pSTextSlidCels, 8, 12);
+		CelDraw(PANEL_X + 101, sy, pSTextSlidCels, 6, 12);
+		CelDraw(PANEL_X + 527, sy, pSTextSlidCels, 8, 12);
 		sy += 12;
 	}
 
 	/// ASSERT: assert(gpBuffer);
 
-#define TRANS_RECT_X 104
-#define TRANS_RECT_Y 150
-#define TRANS_RECT_WIDTH 432
-#define TRANS_RECT_HEIGHT 54
-#include "asm_trans_rect.inc"
+	trans_rect(PANEL_LEFT + 104, DIALOG_TOP - 8, 432, 54);
 
 	strcpy(tempstr, MsgStrings[msgflag]);
-	off = 165 + PitchTbl[342];
+	sx = PANEL_X + 101;
+	sy = DIALOG_Y + 24;
 	len = strlen(tempstr);
 	width = 0;
 
@@ -123,15 +120,15 @@ void DrawDiabloMsg()
 	}
 
 	if (width < 442) {
-		off += (442 - width) >> 1;
+		sx += (442 - width) >> 1;
 	}
 
 	for (i = 0; i < len; i++) {
 		c = fontframe[gbFontTransTbl[(BYTE)tempstr[i]]];
 		if (c != '\0') {
-			CPrintString(off, c, COL_GOLD);
+			CPrintString(sx, sy, c, COL_GOLD);
 		}
-		off += fontkern[c] + 1;
+		sx += fontkern[c] + 1;
 	}
 
 	if (msgdelay > 0) {

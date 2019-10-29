@@ -24,7 +24,6 @@ void palette_init()
 {
 	LoadGamma();
 	memcpy(system_palette, orig_palette, sizeof(orig_palette));
-	LoadSysPal();
 	CreatePalette();
 }
 
@@ -48,36 +47,13 @@ void LoadGamma()
 	color_cycling_enabled = value;
 }
 
-void LoadSysPal()
-{
-	HDC hDC;
-	int i, iStartIndex;
-
-	for (i = 0; i < 256; i++)
-		system_palette[i].peFlags = PC_NOCOLLAPSE | PC_RESERVED;
-
-	if (!fullscreen) {
-		gdwPalEntries = GetDeviceCaps(hDC, NUMRESERVED) / 2;
-		GetSystemPaletteEntries(hDC, 0, gdwPalEntries, system_palette);
-		for (i = 0; i < gdwPalEntries; i++)
-			system_palette[i].peFlags = 0;
-
-		iStartIndex = 256 - gdwPalEntries;
-		GetSystemPaletteEntries(hDC, iStartIndex, gdwPalEntries, &system_palette[iStartIndex]);
-		if (iStartIndex < 256) {
-			for (i = iStartIndex; i < 256; i++)
-				system_palette[i].peFlags = 0;
-		}
-	}
-}
-
 void LoadPalette(char *pszFileName)
 {
 	int i;
 	void *pBuf;
 	BYTE PalData[256][3];
 
-	/// ASSERT: assert(pszFileName);
+	assert(pszFileName);
 
 	WOpenFile(pszFileName, &pBuf, 0);
 	WReadFile(pBuf, (char *)PalData, sizeof(PalData), pszFileName);
@@ -99,7 +75,7 @@ void LoadRndLvlPal(int l)
 	if (l == DTYPE_TOWN) {
 		LoadPalette("Levels\\TownData\\Town.pal");
 	} else {
-		rv = random(0, 4) + 1;
+		rv = random_(0, 4) + 1;
 		sprintf(szFileName, "Levels\\L%iData\\L%i_%i.PAL", l, l, rv);
 		LoadPalette(szFileName);
 	}

@@ -85,16 +85,21 @@ void DrawPlrMsg()
 	int i;
 	DWORD x = 74;
 	DWORD y = 230;
-	DWORD width = 620;
+	DWORD width = SCREEN_WIDTH - 20;
 	_plrmsg *pMsg;
 
 	if (chrflag || questlog) {
-		if (invflag || sbookflag)
-			return;
 		x = 394;
-		width = 300;
-	} else if (invflag || sbookflag)
-		width = 300;
+		width -= 300;
+	}
+	if (invflag || sbookflag)
+		width -= 300;
+
+	if (width < 300)
+		return;
+
+	if (width > 620)
+		width = 620;
 
 	pMsg = plr_msgs;
 	for (i = 0; i < 8; i++) {
@@ -111,7 +116,7 @@ void PrintPlrMsg(DWORD x, DWORD y, DWORD width, const char *str, BYTE col)
 
 	while (*str) {
 		BYTE c;
-		int screen = PitchTbl[y] + x;
+		int sx = x;
 		DWORD len = 0;
 		const char *sstr = str;
 		const char *endstr = sstr;
@@ -135,8 +140,8 @@ void PrintPlrMsg(DWORD x, DWORD y, DWORD width, const char *str, BYTE col)
 			c = gbFontTransTbl[(BYTE)*str++];
 			c = fontframe[c];
 			if (c)
-				CPrintString(screen, c, col);
-			screen += fontkern[c] + 1;
+				CPrintString(sx, y, c, col);
+			sx += fontkern[c] + 1;
 		}
 
 		y += 10;

@@ -19,7 +19,7 @@ char *musicBuffer;
 
 BOOLEAN gbMusicOn = true;
 BOOLEAN gbSoundOn = true;
-int sgnMusicTrack = 6;
+int sgnMusicTrack = NUM_MUSIC;
 
 char *sgszMusicTracks[NUM_MUSIC] = {
 #ifdef SPAWN
@@ -35,12 +35,6 @@ char *sgszMusicTracks[NUM_MUSIC] = {
 	"Music\\Dintro.wav"
 #endif
 };
-
-void snd_stop_snd(TSnd *pSnd)
-{
-	if (pSnd && pSnd->DSB)
-		pSnd->DSB->Stop();
-}
 
 BOOL snd_playing(TSnd *pSnd)
 {
@@ -92,7 +86,7 @@ TSnd *sound_file_load(char *path)
 	BYTE *wave_file;
 	TSnd *pSnd;
 	DWORD dwBytes;
-	const char *error;
+	int error;
 
 	WOpenFile(path, &file, false);
 	pSnd = (TSnd *)DiabloAllocPtr(sizeof(TSnd));
@@ -108,8 +102,8 @@ TSnd *sound_file_load(char *path)
 	error = pSnd->DSB->SetChunk(wave_file, dwBytes);
 	WCloseFile(file);
 	mem_free_dbg(wave_file);
-	if (error != NULL) {
-		app_fatal("%s: %s", pSnd->sound_path, error);
+	if (error != 0) {
+		ErrSdl();
 	}
 
 	return pSnd;
@@ -189,7 +183,7 @@ void music_stop()
 		music = NULL;
 		musicRw = NULL;
 		mem_free_dbg(musicBuffer);
-		sgnMusicTrack = 6;
+		sgnMusicTrack = NUM_MUSIC;
 	}
 }
 
@@ -197,7 +191,7 @@ void music_start(int nTrack)
 {
 	BOOL success;
 
-	/// ASSERT: assert((DWORD) nTrack < NUM_MUSIC);
+	assert((DWORD) nTrack < NUM_MUSIC);
 	music_stop();
 	if (gbMusicOn) {
 		success = SFileOpenFile(sgszMusicTracks[nTrack], &sgpMusicTrack);
@@ -210,7 +204,7 @@ void music_start(int nTrack)
 
 			musicRw = SDL_RWFromConstMem(musicBuffer, bytestoread);
 			if (musicRw == NULL) {
-				SDL_Log(SDL_GetError());
+				ErrSdl();
 			}
 			music = Mix_LoadMUSType_RW(musicRw, MUS_NONE, 1);
 			Mix_VolumeMusic(MIX_MAX_VOLUME - MIX_MAX_VOLUME * sglMusicVolume / VOLUME_MIN);
@@ -225,7 +219,7 @@ void sound_disable_music(BOOL disable)
 {
 	if (disable) {
 		music_stop();
-	} else if (sgnMusicTrack != 6) {
+	} else if (sgnMusicTrack != NUM_MUSIC) {
 		music_start(sgnMusicTrack);
 	}
 }

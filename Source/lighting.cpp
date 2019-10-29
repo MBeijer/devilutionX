@@ -404,28 +404,27 @@ char CrawlTable[2749] = {
 
 // pCrawlTable maps from circle radius to the X- and Y-coordinate deltas from
 // the center of a circle.
-char *pCrawlTable[19] =
-    {
-	    CrawlTable,
-	    CrawlTable + 3,
-	    CrawlTable + 12,
-	    CrawlTable + 45,
-	    CrawlTable + 94,
-	    CrawlTable + 159,
-	    CrawlTable + 240,
-	    CrawlTable + 337,
-	    CrawlTable + 450,
-	    CrawlTable + 579,
-	    CrawlTable + 724,
-	    CrawlTable + 885,
-	    CrawlTable + 1062,
-	    CrawlTable + 1255,
-	    CrawlTable + 1464,
-	    CrawlTable + 1689,
-	    CrawlTable + 1930,
-	    CrawlTable + 2187,
-	    CrawlTable + 2460
-    };
+char *pCrawlTable[19] = {
+	CrawlTable,
+	CrawlTable + 3,
+	CrawlTable + 12,
+	CrawlTable + 45,
+	CrawlTable + 94,
+	CrawlTable + 159,
+	CrawlTable + 240,
+	CrawlTable + 337,
+	CrawlTable + 450,
+	CrawlTable + 579,
+	CrawlTable + 724,
+	CrawlTable + 885,
+	CrawlTable + 1062,
+	CrawlTable + 1255,
+	CrawlTable + 1464,
+	CrawlTable + 1689,
+	CrawlTable + 1930,
+	CrawlTable + 2187,
+	CrawlTable + 2460
+};
 BYTE vCrawlTable[23][30] = {
 	{ 1, 0, 2, 0, 3, 0, 4, 0, 5, 0, 6, 0, 7, 0, 8, 0, 9, 0, 10, 0, 11, 0, 12, 0, 13, 0, 14, 0, 15, 0 },
 	{ 1, 0, 2, 0, 3, 0, 4, 0, 5, 0, 6, 0, 7, 0, 8, 1, 9, 1, 10, 1, 11, 1, 12, 1, 13, 1, 14, 1, 15, 1 },
@@ -969,22 +968,6 @@ void MakeLightTable()
 }
 
 #ifdef _DEBUG
-void ToggleLighting_2()
-{
-	int i;
-
-	if (lightflag) {
-		memset(dLight, 0, sizeof(dLight));
-	} else {
-		memset(dLight, lightmax, sizeof(dLight));
-		for (i = 0; i < MAX_PLRS; i++) {
-			if (plr[i].plractive && plr[i].plrlevel == currlevel) {
-				DoLighting(plr[i].WorldX, plr[i].WorldY, plr[i]._pLightRad, -1);
-			}
-		}
-	}
-}
-
 void ToggleLighting()
 {
 	int i;

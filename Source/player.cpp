@@ -869,8 +869,8 @@ void InitPlayer(int pnum, BOOL FirstTime)
 		if (plr[pnum]._pHitPoints >> 6 > 0) {
 			plr[pnum]._pmode = PM_STAND;
 			NewPlrAnim(pnum, plr[pnum]._pNAnim[DIR_S], plr[pnum]._pNFrames, 3, plr[pnum]._pNWidth);
-			plr[pnum]._pAnimFrame = random(2, plr[pnum]._pNFrames - 1) + 1;
-			plr[pnum]._pAnimCnt = random(2, 3);
+			plr[pnum]._pAnimFrame = random_(2, plr[pnum]._pNFrames - 1) + 1;
+			plr[pnum]._pAnimCnt = random_(2, 3);
 		} else {
 			plr[pnum]._pmode = PM_DEATH;
 			NewPlrAnim(pnum, plr[pnum]._pDAnim[DIR_S], plr[pnum]._pDFrames, 1, plr[pnum]._pDWidth);
@@ -967,7 +967,7 @@ void CheckEFlag(int pnum, BOOL flag)
 	x = plr[pnum].WorldX - 1;
 	y = plr[pnum].WorldY + 1;
 	bitflags = 0;
-	pieces = &dpiece_defs_map_1[IsometricCoord(x, y)];
+	pieces = &dpiece_defs_map_2[x][y];
 
 	for (i = 2; i < 10; i++) {
 		bitflags |= pieces->mt[i];
@@ -986,7 +986,7 @@ void CheckEFlag(int pnum, BOOL flag)
 	x = plr[pnum].WorldX;
 	y = plr[pnum].WorldY + 2;
 	bitflags = 0;
-	pieces = &dpiece_defs_map_1[IsometricCoord(x, y)];
+	pieces = &dpiece_defs_map_2[x][y];
 
 	for (i = 2; i < 10; i++) {
 		bitflags |= pieces->mt[i];
@@ -999,7 +999,7 @@ void CheckEFlag(int pnum, BOOL flag)
 	x = plr[pnum].WorldX - 2;
 	y = plr[pnum].WorldY + 1;
 	bitflags = 0;
-	pieces = &dpiece_defs_map_1[IsometricCoord(x, y)];
+	pieces = &dpiece_defs_map_2[x][y];
 
 	for (i = 2; i < 10; i++) {
 		bitflags |= pieces->mt[i];
@@ -1293,6 +1293,9 @@ void StartWalk(int pnum, int xvel, int yvel, int xadd, int yadd, int EndDir, int
 	}
 }
 
+#if defined(__clang__) || defined(__GNUC__)
+__attribute__((no_sanitize("shift-base")))
+#endif
 void StartWalk2(int pnum, int xvel, int yvel, int xoff, int yoff, int xadd, int yadd, int EndDir, int sdir)
 {
 	int px, py;
@@ -1372,6 +1375,9 @@ void StartWalk2(int pnum, int xvel, int yvel, int xoff, int yoff, int xadd, int 
 	}
 }
 
+#if defined(__clang__) || defined(__GNUC__)
+__attribute__((no_sanitize("shift-base")))
+#endif
 void StartWalk3(int pnum, int xvel, int yvel, int xoff, int yoff, int xadd, int yadd, int mapx, int mapy, int EndDir, int sdir)
 {
 	int px, py, x, y;
@@ -1678,6 +1684,9 @@ void RespawnDeadItem(ItemStruct *itm, int x, int y)
 	itm->_itype = ITYPE_NONE;
 }
 
+#if defined(__clang__) || defined(__GNUC__)
+__attribute__((no_sanitize("shift-base")))
+#endif
 void StartPlayerKill(int pnum, int earflag)
 {
 	BOOL diablolevel;
@@ -2019,6 +2028,9 @@ void InitLevelChange(int pnum)
 	}
 }
 
+#if defined(__clang__) || defined(__GNUC__)
+__attribute__((no_sanitize("shift-base")))
+#endif
 void StartNewLvl(int pnum, int fom, int lvl)
 {
 	InitLevelChange(pnum);
@@ -2272,7 +2284,7 @@ BOOL WeaponDur(int pnum, int durrnd)
 		return FALSE;
 	}
 
-	if (random(3, durrnd) != 0) {
+	if (random_(3, durrnd) != 0) {
 		return FALSE;
 	}
 
@@ -2366,7 +2378,7 @@ BOOL PlrHitMonst(int pnum, int m)
 
 	rv = FALSE;
 
-	hit = random(4, 100);
+	hit = random_(4, 100);
 	if (monster[m]._mmode == MM_STONE) {
 		hit = 0;
 	}
@@ -2394,12 +2406,12 @@ BOOL PlrHitMonst(int pnum, int m)
 #endif
 		mind = plr[pnum]._pIMinDam;
 		maxd = plr[pnum]._pIMaxDam;
-		dam = random(5, maxd - mind + 1) + mind;
+		dam = random_(5, maxd - mind + 1) + mind;
 		dam += dam * plr[pnum]._pIBonusDam / 100;
 		dam += plr[pnum]._pDamageMod + plr[pnum]._pIBonusDamMod;
 		if (plr[pnum]._pClass == PC_WARRIOR) {
 			ddp = plr[pnum]._pLevel;
-			if (random(6, 100) < ddp) {
+			if (random_(6, 100) < ddp) {
 				dam *= 2;
 			}
 		}
@@ -2441,7 +2453,7 @@ BOOL PlrHitMonst(int pnum, int m)
 		}
 
 		if (plr[pnum]._pIFlags & ISPL_RNDSTEALLIFE) {
-			skdam = random(7, dam >> 3);
+			skdam = random_(7, dam >> 3);
 			plr[pnum]._pHitPoints += skdam;
 			if (plr[pnum]._pHitPoints > plr[pnum]._pMaxHP) {
 				plr[pnum]._pHitPoints = plr[pnum]._pMaxHP;
@@ -2541,7 +2553,7 @@ BOOL PlrHitPlr(int pnum, char p)
 		app_fatal("PlrHitPlr: illegal attacking player %d", pnum);
 	}
 
-	hit = random(4, 100);
+	hit = random_(4, 100);
 
 	hper = (plr[pnum]._pDexterity >> 1) + plr[pnum]._pLevel + 50 - (plr[p]._pIBonusAC + plr[p]._pIAC + plr[p]._pDexterity / 5);
 
@@ -2557,7 +2569,7 @@ BOOL PlrHitPlr(int pnum, char p)
 	}
 
 	if ((plr[p]._pmode == PM_STAND || plr[p]._pmode == PM_ATTACK) && plr[p]._pBlockFlag) {
-		blk = random(5, 100);
+		blk = random_(5, 100);
 	} else {
 		blk = 100;
 	}
@@ -2576,19 +2588,19 @@ BOOL PlrHitPlr(int pnum, char p)
 			StartPlrBlock(p, dir);
 		} else {
 			mind = plr[pnum]._pIMinDam;
-			maxd = random(5, plr[pnum]._pIMaxDam - mind + 1);
+			maxd = random_(5, plr[pnum]._pIMaxDam - mind + 1);
 			dam = maxd + mind;
 			dam += plr[pnum]._pDamageMod + plr[pnum]._pIBonusDamMod + dam * plr[pnum]._pIBonusDam / 100;
 
 			if (plr[pnum]._pClass == PC_WARRIOR) {
 				lvl = plr[pnum]._pLevel;
-				if (random(6, 100) < lvl) {
+				if (random_(6, 100) < lvl) {
 					dam *= 2;
 				}
 			}
 			skdam = dam << 6;
 			if (plr[pnum]._pIFlags & ISPL_RNDSTEALLIFE) {
-				tac = random(7, skdam >> 3);
+				tac = random_(7, skdam >> 3);
 				plr[pnum]._pHitPoints += tac;
 				if (plr[pnum]._pHitPoints > plr[pnum]._pMaxHP) {
 					plr[pnum]._pHitPoints = plr[pnum]._pMaxHP;
@@ -2819,7 +2831,7 @@ BOOL PM_DoBlock(int pnum)
 		StartStand(pnum, plr[pnum]._pdir);
 		ClearPlrPVars(pnum);
 
-		if (!random(3, 10)) {
+		if (!random_(3, 10)) {
 			ShieldDur(pnum);
 		}
 		return TRUE;
@@ -2905,7 +2917,7 @@ BOOL PM_DoGotHit(int pnum)
 	if (plr[pnum]._pAnimFrame >= plr[pnum]._pHFrames) {
 		StartStand(pnum, plr[pnum]._pdir);
 		ClearPlrPVars(pnum);
-		if (random(3, 4)) {
+		if (random_(3, 4)) {
 			ArmorDur(pnum);
 		}
 
@@ -2934,7 +2946,7 @@ void ArmorDur(int pnum)
 		return;
 	}
 
-	a = random(8, 3);
+	a = random_(8, 3);
 	if (p->InvBody[INVLOC_CHEST]._itype != ITYPE_NONE && p->InvBody[INVLOC_HEAD]._itype == ITYPE_NONE) {
 		a = 1;
 	}
@@ -3674,7 +3686,7 @@ void CheckPlrSpell()
 
 	if (pcurs != CURSOR_HAND
 	    || MouseY >= PANEL_TOP
-	    || (chrflag && MouseX < 320 || invflag && MouseX > 320)
+	    || (chrflag && MouseX < 320 || invflag && MouseX > RIGHT_PANEL)
 	        && rspell != SPL_HEAL
 	        && rspell != SPL_IDENTIFY
 	        && rspell != SPL_REPAIR

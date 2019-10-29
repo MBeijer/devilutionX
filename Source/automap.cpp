@@ -172,7 +172,7 @@ void DrawAutomap()
 		return;
 	}
 
-	gpBufEnd = &gpBuffer[(PANEL_Y) * BUFFER_WIDTH];
+	gpBufEnd = &gpBuffer[(PANEL_Y)*BUFFER_WIDTH];
 
 	MapX = (ViewX - 16) >> 1;
 	while (MapX + AutoMapXOfs < 0)
@@ -243,6 +243,7 @@ void DrawAutomap()
 	}
 	DrawAutomapPlr();
 	DrawAutomapGame();
+	gpBufEnd = &gpBuffer[BUFFER_WIDTH * (SCREEN_HEIGHT + SCREEN_Y)];
 }
 
 void DrawAutomapType(int sx, int sy, WORD automap_type)
@@ -295,17 +296,17 @@ void DrawAutomapType(int sx, int sy, WORD automap_type)
 		DrawLine(sx, y1, x2, y2, COLOR_DIM);
 		DrawLine(sx, sy, x1, y2, COLOR_DIM);
 		DrawLine(sx, sy, x2, y2, COLOR_DIM);
-		return;
+		break;
 	case 2:
 	case 5:
 		do_vert = TRUE;
 		break;
-	case 4:
-		do_vert = TRUE;
-		do_horz = TRUE;
-		break;
 	case 3:
 	case 6:
+		do_horz = TRUE;
+		break;
+	case 4:
+		do_vert = TRUE;
 		do_horz = TRUE;
 		break;
 	case 8:

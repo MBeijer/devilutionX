@@ -15,377 +15,84 @@ BOOL gbNotInView; // valid - if x/y are in bounds
 const int RndInc = 1;
 const int RndMult = 0x015A4E35;
 
-void CelDrawDatOnly(BYTE *pDecodeTo, BYTE *pRLEBytes, int nDataSize, int nWidth)
+void CelDraw(int sx, int sy, BYTE *pCelBuff, int nCel, int nWidth)
 {
-	int w;
-
-	/// ASSERT: assert(pDecodeTo != NULL);
-	if (!pDecodeTo)
-		return;
-	/// ASSERT: assert(pRLEBytes != NULL);
-	if (!pRLEBytes)
-		return;
-
-	int i;
-	BYTE width;
-	BYTE *src, *dst;
-
-	src = pRLEBytes;
-	dst = pDecodeTo;
-	w = nWidth;
-
-	for (; src != &pRLEBytes[nDataSize]; dst -= BUFFER_WIDTH + w) {
-		for (i = w; i;) {
-			width = *src++;
-			if (!(width & 0x80)) {
-				i -= width;
-				if (width & 1) {
-					dst[0] = src[0];
-					src++;
-					dst++;
-				}
-				width >>= 1;
-				if (width & 1) {
-					dst[0] = src[0];
-					dst[1] = src[1];
-					src += 2;
-					dst += 2;
-				}
-				width >>= 1;
-				for (; width; width--) {
-					dst[0] = src[0];
-					dst[1] = src[1];
-					dst[2] = src[2];
-					dst[3] = src[3];
-					src += 4;
-					dst += 4;
-				}
-			} else {
-				width = -(char)width;
-				dst += width;
-				i -= width;
-			}
-		}
-	}
+	CelBlitFrame(&gpBuffer[sx + BUFFER_WIDTH * sy], pCelBuff, nCel, nWidth);
 }
 
-void CelDecodeOnly(int sx, int sy, BYTE *pCelBuff, int nCel, int nWidth)
+void CelBlitFrame(BYTE *pBuff, BYTE *pCelBuff, int nCel, int nWidth)
 {
 	int nDataSize;
 	BYTE *pRLEBytes;
 
-	/// ASSERT: assert(gpBuffer);
-	if (!gpBuffer)
-		return;
-	/// ASSERT: assert(pCelBuff != NULL);
-	if (!pCelBuff)
-		return;
+	assert(pCelBuff != NULL);
+	assert(pBuff != NULL);
 
 	pRLEBytes = CelGetFrame(pCelBuff, nCel, &nDataSize);
-	CelDrawDatOnly(&gpBuffer[sx + PitchTbl[sy]], pRLEBytes, nDataSize, nWidth);
+	CelBlitSafe(pBuff, pRLEBytes, nDataSize, nWidth);
 }
 
-void CelDecDatOnly(BYTE *pBuff, BYTE *pCelBuff, int nCel, int nWidth)
-{
-	int nDataSize;
-	BYTE *pRLEBytes;
-
-	/// ASSERT: assert(pCelBuff != NULL);
-	if (!pCelBuff)
-		return;
-	/// ASSERT: assert(pBuff != NULL);
-	if (!pBuff)
-		return;
-
-	pRLEBytes = CelGetFrame(pCelBuff, nCel, &nDataSize);
-	CelDrawDatOnly(pBuff, pRLEBytes, nDataSize, nWidth);
-}
-
-/**
- * @param CelSkip Skip lower parts of sprite, must be multiple of 2, max 8
- * @param CelCap Amount of sprite to render from lower to upper, must be multiple of 2, max 8
- */
-void CelDrawHdrOnly(int sx, int sy, BYTE *pCelBuff, int nCel, int nWidth, int CelSkip, int CelCap)
+void CelClippedDraw(int sx, int sy, BYTE *pCelBuff, int nCel, int nWidth)
 {
 	BYTE *pRLEBytes;
 	int nDataSize;
 
-	/// ASSERT: assert(gpBuffer);
-	if (!gpBuffer)
-		return;
-	/// ASSERT: assert(pCelBuff != NULL);
-	if (!pCelBuff)
-		return;
+	assert(gpBuffer);
+	assert(pCelBuff != NULL);
 
-	pRLEBytes = CelGetFrameClipped(pCelBuff, nCel, CelSkip, CelCap, &nDataSize);
-	if (pRLEBytes == NULL)
-		return;
+	pRLEBytes = CelGetFrameClipped(pCelBuff, nCel, &nDataSize);
 
-	CelDrawDatOnly(
-	    &gpBuffer[sx + PitchTbl[sy - 16 * CelSkip]],
+	CelBlitSafe(
+	    &gpBuffer[sx + BUFFER_WIDTH * sy],
 	    pRLEBytes,
 	    nDataSize,
 	    nWidth);
 }
 
-/**
- * @param CelSkip Skip lower parts of sprite, must be multiple of 2, max 8
- * @param CelCap Amount of sprite to render from lower to upper, must be multiple of 2, max 8
- */
-void CelDecodeHdrOnly(BYTE *pBuff, BYTE *pCelBuff, int nCel, int nWidth, int CelSkip, int CelCap)
-{
-	BYTE *pRLEBytes;
-	int nDataSize;
-
-	/// ASSERT: assert(pCelBuff != NULL);
-	if (!pCelBuff)
-		return;
-	/// ASSERT: assert(pBuff != NULL);
-	if (!pBuff)
-		return;
-
-	pRLEBytes = CelGetFrameClipped(pCelBuff, nCel, CelSkip, CelCap, &nDataSize);
-	if (pRLEBytes == NULL)
-		return;
-
-	CelDrawDatOnly(pBuff, pRLEBytes, nDataSize, nWidth);
-}
-
-void CelDecDatLightOnly(BYTE *pDecodeTo, BYTE *pRLEBytes, int nDataSize, int nWidth, BYTE *tbl)
-{
-	int w;
-
-	/// ASSERT: assert(pDecodeTo != NULL);
-	if (!pDecodeTo)
-		return;
-	/// ASSERT: assert(pRLEBytes != NULL);
-	if (!pRLEBytes)
-		return;
-
-	int i;
-	BYTE width;
-	BYTE *src, *dst;
-
-	src = pRLEBytes;
-	dst = pDecodeTo;
-	if (!tbl)
-		tbl = &pLightTbl[light_table_index * 256];
-	w = nWidth;
-
-	for (; src != &pRLEBytes[nDataSize]; dst -= BUFFER_WIDTH + w) {
-		for (i = w; i;) {
-			width = *src++;
-			if (!(width & 0x80)) {
-				i -= width;
-				if (width & 1) {
-					dst[0] = tbl[src[0]];
-					src++;
-					dst++;
-				}
-				width >>= 1;
-				if (width & 1) {
-					dst[0] = tbl[src[0]];
-					dst[1] = tbl[src[1]];
-					src += 2;
-					dst += 2;
-				}
-				width >>= 1;
-				for (; width; width--) {
-					dst[0] = tbl[src[0]];
-					dst[1] = tbl[src[1]];
-					dst[2] = tbl[src[2]];
-					dst[3] = tbl[src[3]];
-					src += 4;
-					dst += 4;
-				}
-			} else {
-				width = -(char)width;
-				dst += width;
-				i -= width;
-			}
-		}
-	}
-}
-
-void CelDecDatLightTrans(BYTE *pDecodeTo, BYTE *pRLEBytes, int nDataSize, int nWidth)
-{
-	int w;
-	BOOL shift;
-	BYTE *tbl;
-
-	/// ASSERT: assert(pDecodeTo != NULL);
-	if (!pDecodeTo)
-		return;
-	/// ASSERT: assert(pRLEBytes != NULL);
-	if (!pRLEBytes)
-		return;
-
-	int i;
-	BYTE width;
-	BYTE *src, *dst;
-
-	src = pRLEBytes;
-	dst = pDecodeTo;
-	tbl = &pLightTbl[light_table_index * 256];
-	w = nWidth;
-	shift = (BYTE)(size_t)dst & 1;
-
-	for (; src != &pRLEBytes[nDataSize]; dst -= BUFFER_WIDTH + w, shift = (shift + 1) & 1) {
-		for (i = w; i;) {
-			width = *src++;
-			if (!(width & 0x80)) {
-				i -= width;
-				if (((BYTE)(size_t)dst & 1) == shift) {
-					if (!(width & 1)) {
-						goto L_ODD;
-					} else {
-						src++;
-						dst++;
-					L_EVEN:
-						width >>= 1;
-						if (width & 1) {
-							dst[0] = tbl[src[0]];
-							src += 2;
-							dst += 2;
-						}
-						width >>= 1;
-						for (; width; width--) {
-							dst[0] = tbl[src[0]];
-							dst[2] = tbl[src[2]];
-							src += 4;
-							dst += 4;
-						}
-					}
-				} else {
-					if (!(width & 1)) {
-						goto L_EVEN;
-					} else {
-						dst[0] = tbl[src[0]];
-						src++;
-						dst++;
-					L_ODD:
-						width >>= 1;
-						if (width & 1) {
-							dst[1] = tbl[src[1]];
-							src += 2;
-							dst += 2;
-						}
-						width >>= 1;
-						for (; width; width--) {
-							dst[1] = tbl[src[1]];
-							dst[3] = tbl[src[3]];
-							src += 4;
-							dst += 4;
-						}
-					}
-				}
-			} else {
-				width = -(char)width;
-				dst += width;
-				i -= width;
-			}
-		}
-	}
-}
-
-void CelDecodeLightOnly(int sx, int sy, BYTE *pCelBuff, int nCel, int nWidth)
+void CelDrawLight(int sx, int sy, BYTE *pCelBuff, int nCel, int nWidth, BYTE *tbl)
 {
 	int nDataSize;
 	BYTE *pDecodeTo, *pRLEBytes;
 
-	/// ASSERT: assert(gpBuffer);
-	if (!gpBuffer)
-		return;
-	/// ASSERT: assert(pCelBuff != NULL);
-	if (!pCelBuff)
-		return;
+	assert(gpBuffer);
+	assert(pCelBuff != NULL);
 
 	pRLEBytes = CelGetFrame(pCelBuff, nCel, &nDataSize);
-	pDecodeTo = &gpBuffer[sx + PitchTbl[sy]];
+	pDecodeTo = &gpBuffer[sx + BUFFER_WIDTH * sy];
 
-	if (light_table_index)
-		CelDecDatLightOnly(pDecodeTo, pRLEBytes, nDataSize, nWidth);
+	if (light_table_index || tbl)
+		CelBlitLightSafe(pDecodeTo, pRLEBytes, nDataSize, nWidth, tbl);
 	else
-		CelDrawDatOnly(pDecodeTo, pRLEBytes, nDataSize, nWidth);
+		CelBlitSafe(pDecodeTo, pRLEBytes, nDataSize, nWidth);
 }
 
-/**
- * @param CelSkip Skip lower parts of sprite, must be multiple of 2, max 8
- * @param CelCap Amount of sprite to render from lower to upper, must be multiple of 2, max 8
- */
-void CelDecodeHdrLightOnly(int sx, int sy, BYTE *pCelBuff, int nCel, int nWidth, int CelSkip, int CelCap)
+void CelClippedDrawLight(int sx, int sy, BYTE *pCelBuff, int nCel, int nWidth)
 {
 	int nDataSize;
 	BYTE *pRLEBytes, *pDecodeTo;
 
-	/// ASSERT: assert(gpBuffer);
-	if (!gpBuffer)
-		return;
-	/// ASSERT: assert(pCelBuff != NULL);
-	if (!pCelBuff)
-		return;
+	assert(gpBuffer);
+	assert(pCelBuff != NULL);
 
-	pRLEBytes = CelGetFrameClipped(pCelBuff, nCel, CelSkip, CelCap, &nDataSize);
-	if (pRLEBytes == NULL)
-		return;
-
-	pDecodeTo = &gpBuffer[sx + PitchTbl[sy - 16 * CelSkip]];
+	pRLEBytes = CelGetFrameClipped(pCelBuff, nCel, &nDataSize);
+	pDecodeTo = &gpBuffer[sx + BUFFER_WIDTH * sy];
 
 	if (light_table_index)
-		CelDecDatLightOnly(pDecodeTo, pRLEBytes, nDataSize, nWidth);
+		CelBlitLightSafe(pDecodeTo, pRLEBytes, nDataSize, nWidth);
 	else
-		CelDrawDatOnly(pDecodeTo, pRLEBytes, nDataSize, nWidth);
+		CelBlitSafe(pDecodeTo, pRLEBytes, nDataSize, nWidth);
 }
 
-/**
- * @param CelSkip Skip lower parts of sprite, must be multiple of 2, max 8
- * @param CelCap Amount of sprite to render from lower to upper, must be multiple of 2, max 8
- */
-void CelDecodeHdrLightTrans(BYTE *pBuff, BYTE *pCelBuff, int nCel, int nWidth, int CelSkip, int CelCap)
-{
-	int nDataSize;
-	BYTE *pRLEBytes;
-
-	/// ASSERT: assert(pCelBuff != NULL);
-	if (!pCelBuff)
-		return;
-	/// ASSERT: assert(pBuff != NULL);
-	if (!pBuff)
-		return;
-
-	pRLEBytes = CelGetFrameClipped(pCelBuff, nCel, CelSkip, CelCap, &nDataSize);
-	if (pRLEBytes == NULL)
-		return;
-
-	if (cel_transparency_active)
-		CelDecDatLightTrans(pBuff, pRLEBytes, nDataSize, nWidth);
-	else if (light_table_index)
-		CelDecDatLightOnly(pBuff, pRLEBytes, nDataSize, nWidth);
-	else
-		CelDrawDatOnly(pBuff, pRLEBytes, nDataSize, nWidth);
-}
-
-/**
- * @param CelSkip Skip lower parts of sprite, must be multiple of 2, max 8
- * @param CelCap Amount of sprite to render from lower to upper, must be multiple of 2, max 8
- */
-void CelDrawHdrLightRed(int sx, int sy, BYTE *pCelBuff, int nCel, int nWidth, int CelSkip, int CelCap, char light)
+void CelDrawLightRed(int sx, int sy, BYTE *pCelBuff, int nCel, int nWidth, char light)
 {
 	int nDataSize, w, idx;
 	BYTE *pRLEBytes, *dst, *tbl;
 
-	/// ASSERT: assert(gpBuffer);
-	if (!gpBuffer)
-		return;
-	/// ASSERT: assert(pCelBuff != NULL);
-	if (!pCelBuff)
-		return;
+	assert(gpBuffer);
+	assert(pCelBuff != NULL);
 
-	pRLEBytes = CelGetFrameClipped(pCelBuff, nCel, CelSkip, CelCap, &nDataSize);
-	if (pRLEBytes == NULL)
-		return;
-
-	dst = &gpBuffer[sx + PitchTbl[sy - 16 * CelSkip]];
+	pRLEBytes = CelGetFrameClipped(pCelBuff, nCel, &nDataSize);
+	dst = &gpBuffer[sx + BUFFER_WIDTH * sy];
 
 	idx = light4flag ? 1024 : 4096;
 	if (light == 2)
@@ -419,23 +126,18 @@ void CelDrawHdrLightRed(int sx, int sy, BYTE *pCelBuff, int nCel, int nWidth, in
 	}
 }
 
-void Cel2DecDatOnly(BYTE *pDecodeTo, BYTE *pRLEBytes, int nDataSize, int nWidth)
+/**
+ * @brief Same as CelBlit but checks for drawing outside the buffer
+ */
+void CelBlitSafe(BYTE *pDecodeTo, BYTE *pRLEBytes, int nDataSize, int nWidth)
 {
-	int w;
-
-	/// ASSERT: assert(pDecodeTo != NULL);
-	if (!pDecodeTo)
-		return;
-	/// ASSERT: assert(pRLEBytes != NULL);
-	if (!pRLEBytes)
-		return;
-	/// ASSERT: assert(gpBuffer);
-	if (!gpBuffer)
-		return;
-
-	int i;
+	int i, w;
 	BYTE width;
 	BYTE *src, *dst;
+
+	assert(pDecodeTo != NULL);
+	assert(pRLEBytes != NULL);
+	assert(gpBuffer);
 
 	src = pRLEBytes;
 	dst = pDecodeTo;
@@ -446,32 +148,11 @@ void Cel2DecDatOnly(BYTE *pDecodeTo, BYTE *pRLEBytes, int nDataSize, int nWidth)
 			width = *src++;
 			if (!(width & 0x80)) {
 				i -= width;
-				if (dst < gpBufEnd) {
-					if (width & 1) {
-						dst[0] = src[0];
-						src++;
-						dst++;
-					}
-					width >>= 1;
-					if (width & 1) {
-						dst[0] = src[0];
-						dst[1] = src[1];
-						src += 2;
-						dst += 2;
-					}
-					width >>= 1;
-					for (; width; width--) {
-						dst[0] = src[0];
-						dst[1] = src[1];
-						dst[2] = src[2];
-						dst[3] = src[3];
-						src += 4;
-						dst += 4;
-					}
-				} else {
-					src += width;
-					dst += width;
+				if (dst < gpBufEnd && dst > gpBufStart) {
+					memcpy(dst, src, width);
 				}
+				src += width;
+				dst += width;
 			} else {
 				width = -(char)width;
 				dst += width;
@@ -481,78 +162,40 @@ void Cel2DecDatOnly(BYTE *pDecodeTo, BYTE *pRLEBytes, int nDataSize, int nWidth)
 	}
 }
 
-/**
- * @param CelSkip Skip lower parts of sprite, must be multiple of 2, max 8
- * @param CelCap Amount of sprite to render from lower to upper, must be multiple of 2, max 8
- */
-void Cel2DrawHdrOnly(int sx, int sy, BYTE *pCelBuff, int nCel, int nWidth, int CelSkip, int CelCap)
+void CelClippedDrawSafe(int sx, int sy, BYTE *pCelBuff, int nCel, int nWidth)
 {
 	BYTE *pRLEBytes;
 	int nDataSize;
 
-	/// ASSERT: assert(gpBuffer);
-	if (!gpBuffer)
-		return;
-	/// ASSERT: assert(pCelBuff != NULL);
-	if (!pCelBuff)
-		return;
+	assert(gpBuffer);
+	assert(pCelBuff != NULL);
 
-	pRLEBytes = CelGetFrameClipped(pCelBuff, nCel, CelSkip, CelCap, &nDataSize);
-	if (pRLEBytes == NULL)
-		return;
+	pRLEBytes = CelGetFrameClipped(pCelBuff, nCel, &nDataSize);
 
-	Cel2DecDatOnly(
-	    &gpBuffer[sx + PitchTbl[sy - 16 * CelSkip]],
+	CelBlitSafe(
+	    &gpBuffer[sx + BUFFER_WIDTH * sy],
 	    pRLEBytes,
 	    nDataSize,
 	    nWidth);
 }
 
 /**
- * @param CelSkip Skip lower parts of sprite, must be multiple of 2, max 8
- * @param CelCap Amount of sprite to render from lower to upper, must be multiple of 2, max 8
+ * @brief Same as CelBlitLight but checks for drawing outside the buffer
  */
-void Cel2DecodeHdrOnly(BYTE *pBuff, BYTE *pCelBuff, int nCel, int nWidth, int CelSkip, int CelCap)
+void CelBlitLightSafe(BYTE *pDecodeTo, BYTE *pRLEBytes, int nDataSize, int nWidth, BYTE *tbl)
 {
-	BYTE *pRLEBytes;
-	int nDataSize;
-
-	/// ASSERT: assert(pCelBuff != NULL);
-	if (!pCelBuff)
-		return;
-	/// ASSERT: assert(pBuff != NULL);
-	if (!pBuff)
-		return;
-
-	pRLEBytes = CelGetFrameClipped(pCelBuff, nCel, CelSkip, CelCap, &nDataSize);
-	if (pRLEBytes == NULL)
-		return;
-
-	Cel2DecDatOnly(pBuff, pRLEBytes, nDataSize, nWidth);
-}
-
-void Cel2DecDatLightOnly(BYTE *pDecodeTo, BYTE *pRLEBytes, int nDataSize, int nWidth)
-{
-	int w;
-	BYTE *tbl;
-
-	/// ASSERT: assert(pDecodeTo != NULL);
-	if (!pDecodeTo)
-		return;
-	/// ASSERT: assert(pRLEBytes != NULL);
-	if (!pRLEBytes)
-		return;
-	/// ASSERT: assert(gpBuffer);
-	if (!gpBuffer)
-		return;
-
-	int i;
+	int i, w;
 	BYTE width;
 	BYTE *src, *dst;
 
+	assert(pDecodeTo != NULL);
+	assert(pRLEBytes != NULL);
+	assert(gpBuffer);
+
 	src = pRLEBytes;
 	dst = pDecodeTo;
-	tbl = &pLightTbl[light_table_index * 256];
+	if (tbl == NULL)
+		tbl = &pLightTbl[light_table_index * 256];
 	w = nWidth;
 
 	for (; src != &pRLEBytes[nDataSize]; dst -= BUFFER_WIDTH + w) {
@@ -560,7 +203,7 @@ void Cel2DecDatLightOnly(BYTE *pDecodeTo, BYTE *pRLEBytes, int nDataSize, int nW
 			width = *src++;
 			if (!(width & 0x80)) {
 				i -= width;
-				if (dst < gpBufEnd) {
+				if (dst < gpBufEnd && dst > gpBufStart) {
 					if (width & 1) {
 						dst[0] = tbl[src[0]];
 						src++;
@@ -595,21 +238,18 @@ void Cel2DecDatLightOnly(BYTE *pDecodeTo, BYTE *pRLEBytes, int nDataSize, int nW
 	}
 }
 
-void Cel2DecDatLightTrans(BYTE *pDecodeTo, BYTE *pRLEBytes, int nDataSize, int nWidth)
+/**
+ * @brief Same as CelBlitLightTrans but checks for drawing outside the buffer
+ */
+void CelBlitLightTransSafe(BYTE *pDecodeTo, BYTE *pRLEBytes, int nDataSize, int nWidth)
 {
 	int w;
 	BOOL shift;
 	BYTE *tbl;
 
-	/// ASSERT: assert(pDecodeTo != NULL);
-	if (!pDecodeTo)
-		return;
-	/// ASSERT: assert(pRLEBytes != NULL);
-	if (!pRLEBytes)
-		return;
-	/// ASSERT: assert(gpBuffer);
-	if (!gpBuffer)
-		return;
+	assert(pDecodeTo != NULL);
+	assert(pRLEBytes != NULL);
+	assert(gpBuffer);
 
 	int i;
 	BYTE width;
@@ -626,7 +266,7 @@ void Cel2DecDatLightTrans(BYTE *pDecodeTo, BYTE *pRLEBytes, int nDataSize, int n
 			width = *src++;
 			if (!(width & 0x80)) {
 				i -= width;
-				if (dst < gpBufEnd) {
+				if (dst < gpBufEnd && dst > gpBufStart) {
 					if (((BYTE)(size_t)dst & 1) == shift) {
 						if (!(width & 1)) {
 							goto L_ODD;
@@ -684,80 +324,33 @@ void Cel2DecDatLightTrans(BYTE *pDecodeTo, BYTE *pRLEBytes, int nDataSize, int n
 	}
 }
 
-/**
- * @param CelSkip Skip lower parts of sprite, must be multiple of 2, max 8
- * @param CelCap Amount of sprite to render from lower to upper, must be multiple of 2, max 8
- */
-void Cel2DecodeHdrLight(int sx, int sy, BYTE *pCelBuff, int nCel, int nWidth, int CelSkip, int CelCap)
-{
-	int nDataSize;
-	BYTE *pRLEBytes, *pDecodeTo;
-
-	/// ASSERT: assert(gpBuffer);
-	if (!gpBuffer)
-		return;
-	/// ASSERT: assert(pCelBuff != NULL);
-	if (!pCelBuff)
-		return;
-
-	pRLEBytes = CelGetFrameClipped(pCelBuff, nCel, CelSkip, CelCap, &nDataSize);
-	if (pRLEBytes == NULL)
-		return;
-
-	pDecodeTo = &gpBuffer[sx + PitchTbl[sy - 16 * CelSkip]];
-
-	if (light_table_index)
-		Cel2DecDatLightOnly(pDecodeTo, pRLEBytes, nDataSize, nWidth);
-	else
-		Cel2DecDatOnly(pDecodeTo, pRLEBytes, nDataSize, nWidth);
-}
-
-/**
- * @param CelSkip Skip lower parts of sprite, must be multiple of 2, max 8
- * @param CelCap Amount of sprite to render from lower to upper, must be multiple of 2, max 8
- */
-void Cel2DecodeLightTrans(BYTE *pBuff, BYTE *pCelBuff, int nCel, int nWidth, int CelSkip, int CelCap)
+void CelClippedBlitLightTrans(BYTE *pBuff, BYTE *pCelBuff, int nCel, int nWidth)
 {
 	int nDataSize;
 	BYTE *pRLEBytes;
 
-	/// ASSERT: assert(pCelBuff != NULL);
-	if (!pCelBuff)
-		return;
+	assert(pCelBuff != NULL);
 
-	pRLEBytes = CelGetFrameClipped(pCelBuff, nCel, CelSkip, CelCap, &nDataSize);
-	if (pRLEBytes == NULL)
-		return;
+	pRLEBytes = CelGetFrameClipped(pCelBuff, nCel, &nDataSize);
 
 	if (cel_transparency_active)
-		Cel2DecDatLightTrans(pBuff, pRLEBytes, nDataSize, nWidth);
+		CelBlitLightTransSafe(pBuff, pRLEBytes, nDataSize, nWidth);
 	else if (light_table_index)
-		Cel2DecDatLightOnly(pBuff, pRLEBytes, nDataSize, nWidth);
+		CelBlitLightSafe(pBuff, pRLEBytes, nDataSize, nWidth);
 	else
-		Cel2DecDatOnly(pBuff, pRLEBytes, nDataSize, nWidth);
+		CelBlitSafe(pBuff, pRLEBytes, nDataSize, nWidth);
 }
 
-/**
- * @param CelSkip Skip lower parts of sprite, must be multiple of 2, max 8
- * @param CelCap Amount of sprite to render from lower to upper, must be multiple of 2, max 8
- */
-void Cel2DrawHdrLightRed(int sx, int sy, BYTE *pCelBuff, int nCel, int nWidth, int CelSkip, int CelCap, char light)
+void CelDrawLightRedSafe(int sx, int sy, BYTE *pCelBuff, int nCel, int nWidth, char light)
 {
 	int nDataSize, w, idx;
 	BYTE *pRLEBytes, *dst, *tbl;
 
-	/// ASSERT: assert(gpBuffer);
-	if (!gpBuffer)
-		return;
-	/// ASSERT: assert(pCelBuff != NULL);
-	if (!pCelBuff)
-		return;
+	assert(gpBuffer);
+	assert(pCelBuff != NULL);
 
-	pRLEBytes = CelGetFrameClipped(pCelBuff, nCel, CelSkip, CelCap, &nDataSize);
-	if (pRLEBytes == NULL)
-		return;
-
-	dst = &gpBuffer[sx + PitchTbl[sy - 16 * CelSkip]];
+	pRLEBytes = CelGetFrameClipped(pCelBuff, nCel, &nDataSize);
+	dst = &gpBuffer[sx + BUFFER_WIDTH * sy];
 
 	idx = light4flag ? 1024 : 4096;
 	if (light == 2)
@@ -777,7 +370,7 @@ void Cel2DrawHdrLightRed(int sx, int sy, BYTE *pCelBuff, int nCel, int nWidth, i
 			width = *pRLEBytes++;
 			if (!(width & 0x80)) {
 				w -= width;
-				if (dst < gpBufEnd) {
+				if (dst < gpBufEnd && dst > gpBufStart) {
 					while (width) {
 						*dst = tbl[*pRLEBytes];
 						pRLEBytes++;
@@ -797,51 +390,31 @@ void Cel2DrawHdrLightRed(int sx, int sy, BYTE *pCelBuff, int nCel, int nWidth, i
 	}
 }
 
-void CelDecodeRect(BYTE *pBuff, int CelSkip, int hgt, int wdt, BYTE *pCelBuff, int nCel, int nWidth)
+/**
+ * @brief Same as CelBlit but cropped to given width
+ */
+void CelBlitWidth(BYTE *pBuff, int x, int y, int wdt, BYTE *pCelBuff, int nCel, int nWidth)
 {
 	BYTE *pRLEBytes, *dst, *end;
 
-	/// ASSERT: assert(pCelBuff != NULL);
-	if (!pCelBuff)
-		return;
-	/// ASSERT: assert(pBuff != NULL);
-	if (!pBuff)
-		return;
+	assert(pCelBuff != NULL);
+	assert(pBuff != NULL);
 
 	int i, nDataSize;
 	BYTE width;
 
 	pRLEBytes = CelGetFrame(pCelBuff, nCel, &nDataSize);
 	end = &pRLEBytes[nDataSize];
-	dst = &pBuff[hgt * wdt + CelSkip];
+	dst = &pBuff[y * wdt + x];
 
 	for (; pRLEBytes != end; dst -= wdt + nWidth) {
 		for (i = nWidth; i;) {
 			width = *pRLEBytes++;
 			if (!(width & 0x80)) {
 				i -= width;
-				if (width & 1) {
-					dst[0] = pRLEBytes[0];
-					pRLEBytes++;
-					dst++;
-				}
-				width >>= 1;
-				if (width & 1) {
-					dst[0] = pRLEBytes[0];
-					dst[1] = pRLEBytes[1];
-					pRLEBytes += 2;
-					dst += 2;
-				}
-				width >>= 1;
-				while (width) {
-					dst[0] = pRLEBytes[0];
-					dst[1] = pRLEBytes[1];
-					dst[2] = pRLEBytes[2];
-					dst[3] = pRLEBytes[3];
-					pRLEBytes += 4;
-					dst += 4;
-					width--;
-				}
+				memcpy(dst, pRLEBytes, width);
+				dst += width;
+				pRLEBytes += width;
 			} else {
 				width = -(char)width;
 				dst += width;
@@ -851,86 +424,25 @@ void CelDecodeRect(BYTE *pBuff, int CelSkip, int hgt, int wdt, BYTE *pCelBuff, i
 	}
 }
 
-/**
- * @param CelSkip Skip lower parts of sprite, must be multiple of 2, max 8
- * @param CelCap Amount of sprite to render from lower to upper, must be multiple of 2, max 8
- */
-void CelDecodeClr(char col, int sx, int sy, BYTE *pCelBuff, int nCel, int nWidth, int CelSkip, int CelCap)
-{
-	int nDataSize, w;
-	BYTE *dst;
-
-	/// ASSERT: assert(pCelBuff != NULL);
-	if (!pCelBuff)
-		return;
-	/// ASSERT: assert(gpBuffer);
-	if (!gpBuffer)
-		return;
-
-	BYTE width;
-	BYTE *end, *src;
-
-	src = CelGetFrameClipped(pCelBuff, nCel, CelSkip, CelCap, &nDataSize);
-	if (src == NULL)
-		return;
-
-	end = &src[nDataSize];
-	dst = &gpBuffer[sx + PitchTbl[sy - 16 * CelSkip]];
-
-	for (; src != end; dst -= BUFFER_WIDTH + nWidth) {
-		for (w = nWidth; w;) {
-			width = *src++;
-			if (!(width & 0x80)) {
-				w -= width;
-				while (width) {
-					if (*src++) {
-						dst[-BUFFER_WIDTH] = col;
-						dst[-1] = col;
-						dst[1] = col;
-						dst[BUFFER_WIDTH] = col;
-					}
-					dst++;
-					width--;
-				}
-			} else {
-				width = -(char)width;
-				dst += width;
-				w -= width;
-			}
-		}
-	}
-}
-
-/**
- * @param CelSkip Skip lower parts of sprite, must be multiple of 2, max 8
- * @param CelCap Amount of sprite to render from lower to upper, must be multiple of 2, max 8
- */
-void CelDrawHdrClrHL(char col, int sx, int sy, BYTE *pCelBuff, int nCel, int nWidth, int CelSkip, int CelCap)
+void CelBlitOutline(char col, int sx, int sy, BYTE *pCelBuff, int nCel, int nWidth)
 {
 	int nDataSize, w;
 	BYTE *src, *dst, *end;
 	BYTE width;
 
-	/// ASSERT: assert(pCelBuff != NULL);
-	if (!pCelBuff)
-		return;
-	/// ASSERT: assert(gpBuffer);
-	if (!gpBuffer)
-		return;
+	assert(pCelBuff != NULL);
+	assert(gpBuffer);
 
-	src = CelGetFrameClipped(pCelBuff, nCel, CelSkip, CelCap, &nDataSize);
-	if (src == NULL)
-		return;
-
+	src = CelGetFrameClipped(pCelBuff, nCel, &nDataSize);
 	end = &src[nDataSize];
-	dst = &gpBuffer[sx + PitchTbl[sy - 16 * CelSkip]];
+	dst = &gpBuffer[sx + BUFFER_WIDTH * sy];
 
 	for (; src != end; dst -= BUFFER_WIDTH + nWidth) {
 		for (w = nWidth; w;) {
 			width = *src++;
 			if (!(width & 0x80)) {
 				w -= width;
-				if (dst < gpBufEnd) {
+				if (dst < gpBufEnd && dst > gpBufStart) {
 					if (dst >= gpBufEnd - BUFFER_WIDTH) {
 						while (width) {
 							if (*src++) {
@@ -970,14 +482,14 @@ void ENG_set_pixel(int sx, int sy, BYTE col)
 {
 	BYTE *dst;
 
-	/// ASSERT: assert(gpBuffer);
+	assert(gpBuffer);
 
 	if (sy < 0 || sy >= SCREEN_HEIGHT + SCREEN_Y || sx < SCREEN_X || sx >= SCREEN_WIDTH + SCREEN_X)
 		return;
 
-	dst = &gpBuffer[sx + PitchTbl[sy]];
+	dst = &gpBuffer[sx + BUFFER_WIDTH * sy];
 
-	if (dst < gpBufEnd)
+	if (dst < gpBufEnd && dst > gpBufStart)
 		*dst = col;
 }
 
@@ -985,19 +497,19 @@ void engine_draw_pixel(int sx, int sy)
 {
 	BYTE *dst;
 
-	/// ASSERT: assert(gpBuffer);
+	assert(gpBuffer);
 
 	if (gbRotateMap) {
 		if (gbNotInView && (sx < 0 || sx >= SCREEN_HEIGHT + SCREEN_Y || sy < SCREEN_X || sy >= SCREEN_WIDTH + SCREEN_X))
 			return;
-		dst = &gpBuffer[sy + PitchTbl[sx]];
+		dst = &gpBuffer[sy + BUFFER_WIDTH * sx];
 	} else {
 		if (gbNotInView && (sy < 0 || sy >= SCREEN_HEIGHT + SCREEN_Y || sx < SCREEN_X || sx >= SCREEN_WIDTH + SCREEN_X))
 			return;
-		dst = &gpBuffer[sx + PitchTbl[sy]];
+		dst = &gpBuffer[sx + BUFFER_WIDTH * sy];
 	}
 
-	if (dst < gpBufEnd)
+	if (dst < gpBufEnd && dst > gpBufStart)
 		*dst = gbPixelCol;
 }
 
@@ -1261,11 +773,11 @@ void SetRndSeed(int s)
 int GetRndSeed()
 {
 	SeedCount++;
-	sglGameSeed = RndMult * sglGameSeed + RndInc;
+	sglGameSeed = static_cast<unsigned int>(RndMult) * sglGameSeed + RndInc;
 	return abs(sglGameSeed);
 }
 
-int random(BYTE idx, int v)
+int random_(BYTE idx, int v)
 {
 	if (v <= 0)
 		return 0;
@@ -1328,7 +840,7 @@ DWORD LoadFileWithMem(const char *pszName, void *p)
 	DWORD dwFileLen;
 	HANDLE hsFile;
 
-	/// ASSERT: assert(pszName);
+	assert(pszName);
 	if (p == NULL) {
 		app_fatal("LoadFileWithMem(NULL):\n%s", pszName);
 	}
@@ -1346,14 +858,17 @@ DWORD LoadFileWithMem(const char *pszName, void *p)
 	return dwFileLen;
 }
 
+/**
+ * @brief Apply the color swaps to a CL2 sprite
+ */
 void Cl2ApplyTrans(BYTE *p, BYTE *ttbl, int nCel)
 {
 	int i, nDataSize;
 	char width;
 	BYTE *dst;
 
-	/// ASSERT: assert(p != NULL);
-	/// ASSERT: assert(ttbl != NULL);
+	assert(p != NULL);
+	assert(ttbl != NULL);
 
 	for (i = 1; i <= nCel; i++) {
 		dst = CelGetFrame(p, i, &nDataSize) + 10;
@@ -1361,17 +876,17 @@ void Cl2ApplyTrans(BYTE *p, BYTE *ttbl, int nCel)
 		while (nDataSize) {
 			width = *dst++;
 			nDataSize--;
-			/// ASSERT: assert(nDataSize >= 0);
+			assert(nDataSize >= 0);
 			if (width < 0) {
 				width = -width;
 				if (width > 65) {
 					nDataSize--;
-					/// ASSERT: assert(nDataSize >= 0);
+					assert(nDataSize >= 0);
 					*dst = ttbl[*dst];
 					dst++;
 				} else {
 					nDataSize -= width;
-					/// ASSERT: assert(nDataSize >= 0);
+					assert(nDataSize >= 0);
 					while (width) {
 						*dst = ttbl[*dst];
 						dst++;
@@ -1383,37 +898,25 @@ void Cl2ApplyTrans(BYTE *p, BYTE *ttbl, int nCel)
 	}
 }
 
-/**
- * @param CelSkip Skip lower parts of sprite, must be multiple of 2, max 8
- * @param CelCap Amount of sprite to render from lower to upper, must be multiple of 2, max 8
- */
-void Cl2DecodeFrm1(int sx, int sy, BYTE *pCelBuff, int nCel, int nWidth, int CelSkip, int CelCap)
+void Cl2Draw(int sx, int sy, BYTE *pCelBuff, int nCel, int nWidth)
 {
 	BYTE *pRLEBytes;
 	int nDataSize;
 
-	/// ASSERT: assert(gpBuffer != NULL);
-	if (!gpBuffer)
-		return;
-	/// ASSERT: assert(pCelBuff != NULL);
-	if (!pCelBuff)
-		return;
-	/// ASSERT: assert(nCel > 0);
-	if (nCel <= 0)
-		return;
+	assert(gpBuffer != NULL);
+	assert(pCelBuff != NULL);
+	assert(nCel > 0);
 
-	pRLEBytes = CelGetFrameClipped(pCelBuff, nCel, CelSkip, CelCap, &nDataSize);
-	if (pRLEBytes == NULL)
-		return;
+	pRLEBytes = CelGetFrameClipped(pCelBuff, nCel, &nDataSize);
 
-	Cl2DecDatFrm1(
-	    &gpBuffer[sx + PitchTbl[sy - 16 * CelSkip]],
+	Cl2BlitSafe(
+	    &gpBuffer[sx + BUFFER_WIDTH * sy],
 	    pRLEBytes,
 	    nDataSize,
 	    nWidth);
 }
 
-void Cl2DecDatFrm1(BYTE *pDecodeTo, BYTE *pRLEBytes, int nDataSize, int nWidth)
+void Cl2BlitSafe(BYTE *pDecodeTo, BYTE *pRLEBytes, int nDataSize, int nWidth)
 {
 	int w;
 	char width;
@@ -1433,341 +936,7 @@ void Cl2DecDatFrm1(BYTE *pDecodeTo, BYTE *pRLEBytes, int nDataSize, int nWidth)
 				width -= 65;
 				nDataSize--;
 				fill = *src++;
-				w -= width;
-				while (width) {
-					*dst = fill;
-					dst++;
-					width--;
-				}
-				if (!w) {
-					w = nWidth;
-					dst -= BUFFER_WIDTH + w;
-				}
-				continue;
-			} else {
-				nDataSize -= width;
-				w -= width;
-				while (width) {
-					*dst = *src;
-					src++;
-					dst++;
-					width--;
-				}
-				if (!w) {
-					w = nWidth;
-					dst -= BUFFER_WIDTH + w;
-				}
-				continue;
-			}
-		}
-		while (width) {
-			if (width > w) {
-				dst += w;
-				width -= w;
-				w = 0;
-			} else {
-				dst += width;
-				w -= width;
-				width = 0;
-			}
-			if (!w) {
-				w = nWidth;
-				dst -= BUFFER_WIDTH + w;
-			}
-		}
-	}
-}
-
-/**
- * @param CelSkip Skip lower parts of sprite, must be multiple of 2, max 8
- * @param CelCap Amount of sprite to render from lower to upper, must be multiple of 2, max 8
- */
-void Cl2DecodeFrm2(char col, int sx, int sy, BYTE *pCelBuff, int nCel, int nWidth, int CelSkip, int CelCap)
-{
-	int nDataSize;
-	BYTE *pRLEBytes;
-
-	/// ASSERT: assert(gpBuffer != NULL);
-	if (!gpBuffer)
-		return;
-	/// ASSERT: assert(pCelBuff != NULL);
-	if (!pCelBuff)
-		return;
-	/// ASSERT: assert(nCel > 0);
-	if (nCel <= 0)
-		return;
-
-	pRLEBytes = CelGetFrameClipped(pCelBuff, nCel, CelSkip, CelCap, &nDataSize);
-	if (pRLEBytes == NULL)
-		return;
-
-	Cl2DecDatFrm2(
-	    &gpBuffer[sx + PitchTbl[sy - 16 * CelSkip]],
-	    pRLEBytes,
-	    nDataSize,
-	    nWidth,
-	    col);
-}
-
-void Cl2DecDatFrm2(BYTE *pDecodeTo, BYTE *pRLEBytes, int nDataSize, int nWidth, char col)
-{
-	int w;
-	char width;
-	BYTE *src, *dst;
-
-	src = pRLEBytes;
-	dst = pDecodeTo;
-	w = nWidth;
-
-	while (nDataSize) {
-		width = *src++;
-		nDataSize--;
-		if (width < 0) {
-			width = -width;
-			if (width > 65) {
-				width -= 65;
-				nDataSize--;
-				if (*src++) {
-					w -= width;
-					dst[-1] = col;
-					dst[width] = col;
-					while (width) {
-						dst[-BUFFER_WIDTH] = col;
-						dst[BUFFER_WIDTH] = col;
-						dst++;
-						width--;
-					}
-					if (!w) {
-						w = nWidth;
-						dst -= BUFFER_WIDTH + w;
-					}
-					continue;
-				}
-			} else {
-				nDataSize -= width;
-				w -= width;
-				while (width) {
-					if (*src++) {
-						dst[-1] = col;
-						dst[1] = col;
-						dst[-BUFFER_WIDTH] = col;
-						dst[BUFFER_WIDTH] = col;
-					}
-					dst++;
-					width--;
-				}
-				if (!w) {
-					w = nWidth;
-					dst -= BUFFER_WIDTH + w;
-				}
-				continue;
-			}
-		}
-		while (width) {
-			if (width > w) {
-				dst += w;
-				width -= w;
-				w = 0;
-			} else {
-				dst += width;
-				w -= width;
-				width = 0;
-			}
-			if (!w) {
-				w = nWidth;
-				dst -= BUFFER_WIDTH + w;
-			}
-		}
-	}
-}
-
-/**
- * @param CelSkip Skip lower parts of sprite, must be multiple of 2, max 8
- * @param CelCap Amount of sprite to render from lower to upper, must be multiple of 2, max 8
- */
-void Cl2DecodeFrm3(int sx, int sy, BYTE *pCelBuff, int nCel, int nWidth, int CelSkip, int CelCap, char light)
-{
-	int nDataSize, idx;
-	BYTE *pRLEBytes, *pDecodeTo;
-
-	/// ASSERT: assert(gpBuffer != NULL);
-	if (!gpBuffer)
-		return;
-	/// ASSERT: assert(pCelBuff != NULL);
-	if (!pCelBuff)
-		return;
-	/// ASSERT: assert(nCel > 0);
-	if (nCel <= 0)
-		return;
-
-	pRLEBytes = CelGetFrameClipped(pCelBuff, nCel, CelSkip, CelCap, &nDataSize);
-	if (pRLEBytes == NULL)
-		return;
-
-	pDecodeTo = &gpBuffer[sx + PitchTbl[sy - 16 * CelSkip]];
-
-	idx = light4flag ? 1024 : 4096;
-	if (light == 2)
-		idx += 256;
-	if (light >= 4)
-		idx += (light - 1) << 8;
-
-	Cl2DecDatLightTbl1(
-	    pDecodeTo,
-	    pRLEBytes,
-	    nDataSize,
-	    nWidth,
-	    &pLightTbl[idx]);
-}
-
-void Cl2DecDatLightTbl1(BYTE *pDecodeTo, BYTE *pRLEBytes, int nDataSize, int nWidth, BYTE *pTable)
-{
-	int w;
-	char width;
-	BYTE fill;
-	BYTE *src, *dst;
-
-	src = pRLEBytes;
-	dst = pDecodeTo;
-	w = nWidth;
-	sgnWidth = nWidth;
-
-	while (nDataSize) {
-		width = *src++;
-		nDataSize--;
-		if (width < 0) {
-			width = -width;
-			if (width > 65) {
-				width -= 65;
-				nDataSize--;
-				fill = pTable[*src++];
-				w -= width;
-				while (width) {
-					*dst = fill;
-					dst++;
-					width--;
-				}
-				if (!w) {
-					w = sgnWidth;
-					dst -= BUFFER_WIDTH + w;
-				}
-				continue;
-			} else {
-				nDataSize -= width;
-				w -= width;
-				while (width) {
-					*dst = pTable[*src];
-					src++;
-					dst++;
-					width--;
-				}
-				if (!w) {
-					w = sgnWidth;
-					dst -= BUFFER_WIDTH + w;
-				}
-				continue;
-			}
-		}
-		while (width) {
-			if (width > w) {
-				dst += w;
-				width -= w;
-				w = 0;
-			} else {
-				dst += width;
-				w -= width;
-				width = 0;
-			}
-			if (!w) {
-				w = sgnWidth;
-				dst -= BUFFER_WIDTH + w;
-			}
-		}
-	}
-}
-
-/**
- * @param CelSkip Skip lower parts of sprite, must be multiple of 2, max 8
- * @param CelCap Amount of sprite to render from lower to upper, must be multiple of 2, max 8
- */
-void Cl2DecodeLightTbl(int sx, int sy, BYTE *pCelBuff, int nCel, int nWidth, int CelSkip, int CelCap)
-{
-	int nDataSize;
-	BYTE *pRLEBytes, *pDecodeTo;
-
-	/// ASSERT: assert(gpBuffer != NULL);
-	if (!gpBuffer)
-		return;
-	/// ASSERT: assert(pCelBuff != NULL);
-	if (!pCelBuff)
-		return;
-	/// ASSERT: assert(nCel > 0);
-	if (nCel <= 0)
-		return;
-
-	pRLEBytes = CelGetFrameClipped(pCelBuff, nCel, CelSkip, CelCap, &nDataSize);
-	if (pRLEBytes == NULL)
-		return;
-
-	pDecodeTo = &gpBuffer[sx + PitchTbl[sy - 16 * CelSkip]];
-
-	if (light_table_index)
-		Cl2DecDatLightTbl1(pDecodeTo, pRLEBytes, nDataSize, nWidth, &pLightTbl[light_table_index * 256]);
-	else
-		Cl2DecDatFrm1(pDecodeTo, pRLEBytes, nDataSize, nWidth);
-}
-
-/**
- * @param CelSkip Skip lower parts of sprite, must be multiple of 2, max 8
- * @param CelCap Amount of sprite to render from lower to upper, must be multiple of 2, max 8
- */
-void Cl2DecodeFrm4(int sx, int sy, BYTE *pCelBuff, int nCel, int nWidth, int CelSkip, int CelCap)
-{
-	BYTE *pRLEBytes;
-	int nDataSize;
-
-	/// ASSERT: assert(gpBuffer != NULL);
-	if (!gpBuffer)
-		return;
-	/// ASSERT: assert(pCelBuff != NULL);
-	if (!pCelBuff)
-		return;
-	/// ASSERT: assert(nCel > 0);
-	if (nCel <= 0)
-		return;
-
-	pRLEBytes = CelGetFrameClipped(pCelBuff, nCel, CelSkip, CelCap, &nDataSize);
-	if (pRLEBytes == NULL)
-		return;
-
-	Cl2DecDatFrm4(
-	    &gpBuffer[sx + PitchTbl[sy - 16 * CelSkip]],
-	    pRLEBytes,
-	    nDataSize,
-	    nWidth);
-}
-
-void Cl2DecDatFrm4(BYTE *pDecodeTo, BYTE *pRLEBytes, int nDataSize, int nWidth)
-{
-	int w;
-	char width;
-	BYTE fill;
-	BYTE *src, *dst;
-
-	src = pRLEBytes;
-	dst = pDecodeTo;
-	w = nWidth;
-
-	while (nDataSize) {
-		width = *src++;
-		nDataSize--;
-		if (width < 0) {
-			width = -width;
-			if (width > 65) {
-				width -= 65;
-				nDataSize--;
-				fill = *src++;
-				if (dst < gpBufEnd) {
+				if (dst < gpBufEnd && dst > gpBufStart) {
 					w -= width;
 					while (width) {
 						*dst = fill;
@@ -1782,7 +951,7 @@ void Cl2DecDatFrm4(BYTE *pDecodeTo, BYTE *pRLEBytes, int nDataSize, int nWidth)
 				}
 			} else {
 				nDataSize -= width;
-				if (dst < gpBufEnd) {
+				if (dst < gpBufEnd && dst > gpBufStart) {
 					w -= width;
 					while (width) {
 						*dst = *src;
@@ -1818,32 +987,20 @@ void Cl2DecDatFrm4(BYTE *pDecodeTo, BYTE *pRLEBytes, int nDataSize, int nWidth)
 	}
 }
 
-/**
- * @param CelSkip Skip lower parts of sprite, must be multiple of 2, max 8
- * @param CelCap Amount of sprite to render from lower to upper, must be multiple of 2, max 8
- */
-void Cl2DecodeClrHL(char col, int sx, int sy, BYTE *pCelBuff, int nCel, int nWidth, int CelSkip, int CelCap)
+void Cl2DrawOutline(char col, int sx, int sy, BYTE *pCelBuff, int nCel, int nWidth)
 {
 	int nDataSize;
 	BYTE *pRLEBytes;
 
-	/// ASSERT: assert(gpBuffer != NULL);
-	if (!gpBuffer)
-		return;
-	/// ASSERT: assert(pCelBuff != NULL);
-	if (!pCelBuff)
-		return;
-	/// ASSERT: assert(nCel > 0);
-	if (nCel <= 0)
-		return;
+	assert(gpBuffer != NULL);
+	assert(pCelBuff != NULL);
+	assert(nCel > 0);
 
-	pRLEBytes = CelGetFrameClipped(pCelBuff, nCel, CelSkip, CelCap, &nDataSize);
-	if (pRLEBytes == NULL)
-		return;
+	pRLEBytes = CelGetFrameClipped(pCelBuff, nCel, &nDataSize);
 
 	gpBufEnd -= BUFFER_WIDTH;
-	Cl2DecDatClrHL(
-	    &gpBuffer[sx + PitchTbl[sy - 16 * CelSkip]],
+	Cl2BlitOutlineSafe(
+	    &gpBuffer[sx + BUFFER_WIDTH * sy],
 	    pRLEBytes,
 	    nDataSize,
 	    nWidth,
@@ -1851,7 +1008,7 @@ void Cl2DecodeClrHL(char col, int sx, int sy, BYTE *pCelBuff, int nCel, int nWid
 	gpBufEnd += BUFFER_WIDTH;
 }
 
-void Cl2DecDatClrHL(BYTE *pDecodeTo, BYTE *pRLEBytes, int nDataSize, int nWidth, char col)
+void Cl2BlitOutlineSafe(BYTE *pDecodeTo, BYTE *pRLEBytes, int nDataSize, int nWidth, char col)
 {
 	int w;
 	char width;
@@ -1869,7 +1026,7 @@ void Cl2DecDatClrHL(BYTE *pDecodeTo, BYTE *pRLEBytes, int nDataSize, int nWidth,
 			if (width > 65) {
 				width -= 65;
 				nDataSize--;
-				if (*src++ && dst < gpBufEnd) {
+				if (*src++ && dst < gpBufEnd && dst > gpBufStart) {
 					w -= width;
 					dst[-1] = col;
 					dst[width] = col;
@@ -1887,7 +1044,7 @@ void Cl2DecDatClrHL(BYTE *pDecodeTo, BYTE *pRLEBytes, int nDataSize, int nWidth,
 				}
 			} else {
 				nDataSize -= width;
-				if (dst < gpBufEnd) {
+				if (dst < gpBufEnd && dst > gpBufStart) {
 					w -= width;
 					while (width) {
 						if (*src++) {
@@ -1927,30 +1084,17 @@ void Cl2DecDatClrHL(BYTE *pDecodeTo, BYTE *pRLEBytes, int nDataSize, int nWidth,
 	}
 }
 
-/**
- * @param CelSkip Skip lower parts of sprite, must be multiple of 2, max 8
- * @param CelCap Amount of sprite to render from lower to upper, must be multiple of 2, max 8
- */
-void Cl2DecodeFrm5(int sx, int sy, BYTE *pCelBuff, int nCel, int nWidth, int CelSkip, int CelCap, char light)
+void Cl2DrawLightTbl(int sx, int sy, BYTE *pCelBuff, int nCel, int nWidth, char light)
 {
 	int nDataSize, idx;
 	BYTE *pRLEBytes, *pDecodeTo;
 
-	/// ASSERT: assert(gpBuffer != NULL);
-	if (!gpBuffer)
-		return;
-	/// ASSERT: assert(pCelBuff != NULL);
-	if (!pCelBuff)
-		return;
-	/// ASSERT: assert(nCel > 0);
-	if (nCel <= 0)
-		return;
+	assert(gpBuffer != NULL);
+	assert(pCelBuff != NULL);
+	assert(nCel > 0);
 
-	pRLEBytes = CelGetFrameClipped(pCelBuff, nCel, CelSkip, CelCap, &nDataSize);
-	if (pRLEBytes == NULL)
-		return;
-
-	pDecodeTo = &gpBuffer[sx + PitchTbl[sy - 16 * CelSkip]];
+	pRLEBytes = CelGetFrameClipped(pCelBuff, nCel, &nDataSize);
+	pDecodeTo = &gpBuffer[sx + BUFFER_WIDTH * sy];
 
 	idx = light4flag ? 1024 : 4096;
 	if (light == 2)
@@ -1958,7 +1102,7 @@ void Cl2DecodeFrm5(int sx, int sy, BYTE *pCelBuff, int nCel, int nWidth, int Cel
 	if (light >= 4)
 		idx += (light - 1) << 8;
 
-	Cl2DecDatLightTbl2(
+	Cl2BlitLightSafe(
 	    pDecodeTo,
 	    pRLEBytes,
 	    nDataSize,
@@ -1966,7 +1110,7 @@ void Cl2DecodeFrm5(int sx, int sy, BYTE *pCelBuff, int nCel, int nWidth, int Cel
 	    &pLightTbl[idx]);
 }
 
-void Cl2DecDatLightTbl2(BYTE *pDecodeTo, BYTE *pRLEBytes, int nDataSize, int nWidth, BYTE *pTable)
+void Cl2BlitLightSafe(BYTE *pDecodeTo, BYTE *pRLEBytes, int nDataSize, int nWidth, BYTE *pTable)
 {
 	int w;
 	char width;
@@ -1987,7 +1131,7 @@ void Cl2DecDatLightTbl2(BYTE *pDecodeTo, BYTE *pRLEBytes, int nDataSize, int nWi
 				width -= 65;
 				nDataSize--;
 				fill = pTable[*src++];
-				if (dst < gpBufEnd) {
+				if (dst < gpBufEnd && dst > gpBufStart) {
 					w -= width;
 					while (width) {
 						*dst = fill;
@@ -2002,7 +1146,7 @@ void Cl2DecDatLightTbl2(BYTE *pDecodeTo, BYTE *pRLEBytes, int nDataSize, int nWi
 				}
 			} else {
 				nDataSize -= width;
-				if (dst < gpBufEnd) {
+				if (dst < gpBufEnd && dst > gpBufStart) {
 					w -= width;
 					while (width) {
 						*dst = pTable[*src];
@@ -2038,35 +1182,22 @@ void Cl2DecDatLightTbl2(BYTE *pDecodeTo, BYTE *pRLEBytes, int nDataSize, int nWi
 	}
 }
 
-/**
- * @param CelSkip Skip lower parts of sprite, must be multiple of 2, max 8
- * @param CelCap Amount of sprite to render from lower to upper, must be multiple of 2, max 8
- */
-void Cl2DecodeFrm6(int sx, int sy, BYTE *pCelBuff, int nCel, int nWidth, int CelSkip, int CelCap)
+void Cl2DrawLight(int sx, int sy, BYTE *pCelBuff, int nCel, int nWidth)
 {
 	int nDataSize;
 	BYTE *pRLEBytes, *pDecodeTo;
 
-	/// ASSERT: assert(gpBuffer != NULL);
-	if (!gpBuffer)
-		return;
-	/// ASSERT: assert(pCelBuff != NULL);
-	if (!pCelBuff)
-		return;
-	/// ASSERT: assert(nCel > 0);
-	if (nCel <= 0)
-		return;
+	assert(gpBuffer != NULL);
+	assert(pCelBuff != NULL);
+	assert(nCel > 0);
 
-	pRLEBytes = CelGetFrameClipped(pCelBuff, nCel, CelSkip, CelCap, &nDataSize);
-	if (pRLEBytes == NULL)
-		return;
-
-	pDecodeTo = &gpBuffer[sx + PitchTbl[sy - 16 * CelSkip]];
+	pRLEBytes = CelGetFrameClipped(pCelBuff, nCel, &nDataSize);
+	pDecodeTo = &gpBuffer[sx + BUFFER_WIDTH * sy];
 
 	if (light_table_index)
-		Cl2DecDatLightTbl2(pDecodeTo, pRLEBytes, nDataSize, nWidth, &pLightTbl[light_table_index * 256]);
+		Cl2BlitLightSafe(pDecodeTo, pRLEBytes, nDataSize, nWidth, &pLightTbl[light_table_index * 256]);
 	else
-		Cl2DecDatFrm4(pDecodeTo, pRLEBytes, nDataSize, nWidth);
+		Cl2BlitSafe(pDecodeTo, pRLEBytes, nDataSize, nWidth);
 }
 
 void PlayInGameMovie(char *pszMovie)

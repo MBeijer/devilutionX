@@ -37,6 +37,9 @@ const BYTE mfontkern[56] = {
 
 /* data */
 
+/**
+ * Positive numbers will delay scrolling 1 out of n frames, negative numbers will scroll 1+(-n) pixels.
+ */
 int qscroll_spd_tbl[9] = { 2, 4, 6, 8, 0, -1, -2, -3, -4 };
 
 void FreeQuestText()
@@ -59,8 +62,11 @@ void InitQTextMsg(int m)
 		qtextptr = alltext[m].txtstr;
 		qtextflag = TRUE;
 		qtexty = 500;
-		sgLastScroll = qscroll_spd_tbl[alltext[m].txtspd - 1]; /* double check offset */
-		scrolltexty = sgLastScroll;
+		sgLastScroll = qscroll_spd_tbl[alltext[m].txtspd - 1];
+		if (sgLastScroll <= 0)
+			scrolltexty = 50 / -(sgLastScroll - 1);
+		else
+			scrolltexty = ((sgLastScroll + 1) * 50) / sgLastScroll;
 		qtextSpd = GetTickCount();
 	}
 	PlaySFX(alltext[m].sfxnr);
@@ -68,70 +74,23 @@ void InitQTextMsg(int m)
 
 void DrawQTextBack()
 {
-	CelDecodeOnly(88, 487, pTextBoxCels, 1, 591);
-
-#define TRANS_RECT_X 27
-#define TRANS_RECT_Y 28
-#define TRANS_RECT_WIDTH 585
-#define TRANS_RECT_HEIGHT 297
-#include "asm_trans_rect.inc"
+	CelDraw(PANEL_X + 24, 487, pTextBoxCels, 1, 591);
+	trans_rect(PANEL_LEFT + 27, 28, 585, 297);
 }
 
 void PrintQTextChr(int sx, int sy, BYTE *pCelBuff, int nCel)
 {
-	BYTE *dst, *pStart, *pEnd, *end;
+	BYTE *pStart, *pEnd;
 
 	/// ASSERT: assert(gpBuffer);
+	pStart = gpBufStart;
+	gpBufStart = &gpBuffer[BUFFER_WIDTH * (49 + SCREEN_Y)];
+	pEnd = gpBufEnd;
+	gpBufEnd = &gpBuffer[BUFFER_WIDTH * (309 + SCREEN_Y)];
+	CelDraw(sx, sy, pCelBuff, nCel, 22);
 
-	dst = &gpBuffer[sx + PitchTbl[sy]];
-	pStart = &gpBuffer[PitchTbl[209]];
-	pEnd = &gpBuffer[PitchTbl[469]];
-
-	int i, nDataSize;
-	BYTE width;
-	BYTE *src;
-
-	src = CelGetFrame(pCelBuff,nCel, &nDataSize);
-	end = &src[nDataSize];
-
-	for (; src != end; dst -= BUFFER_WIDTH + 22) {
-		for (i = 22; i;) {
-			width = *src++;
-			if (!(width & 0x80)) {
-				i -= width;
-				if (dst >= pStart && dst <= pEnd) {
-					if (width & 1) {
-						dst[0] = src[0];
-						src++;
-						dst++;
-					}
-					width >>= 1;
-					if (width & 1) {
-						dst[0] = src[0];
-						dst[1] = src[1];
-						src += 2;
-						dst += 2;
-					}
-					width >>= 1;
-					for (; width; width--) {
-						dst[0] = src[0];
-						dst[1] = src[1];
-						dst[2] = src[2];
-						dst[3] = src[3];
-						src += 4;
-						dst += 4;
-					}
-				} else {
-					src += width;
-					dst += width;
-				}
-			} else {
-				width = -(char)width;
-				dst += width;
-				i -= width;
-			}
-		}
-	}
+	gpBufStart = pStart;
+	gpBufEnd = pEnd;
 }
 
 void DrawQText()
@@ -147,7 +106,7 @@ void DrawQText()
 
 	p = qtextptr;
 	pnl = NULL;
-	tx = 112;
+	tx = 48 + PANEL_X;
 	ty = qtexty;
 
 	doneflag = FALSE;
@@ -190,37 +149,21 @@ void DrawQText()
 		if (pnl == NULL) {
 			pnl = p;
 		}
-		tx = 112;
+		tx = 48 + PANEL_X;
 		ty += 38;
 		if (ty > 501) {
 			doneflag = TRUE;
 		}
 	}
 
-	currTime = GetTickCount();
-	while (1) {
-		if (sgLastScroll <= 0) {
-			qtexty--;
-			qtexty += sgLastScroll;
-		} else {
-			scrolltexty--;
-			if (scrolltexty != 0) {
-				qtexty--;
-			}
-		}
-		if (scrolltexty == 0) {
-			scrolltexty = sgLastScroll;
-		}
+	for (currTime = GetTickCount(); qtextSpd + scrolltexty < currTime; qtextSpd += scrolltexty) {
+		qtexty--;
 		if (qtexty <= 209) {
 			qtexty += 38;
 			qtextptr = pnl;
 			if (*pnl == '|') {
 				qtextflag = FALSE;
 			}
-			break;
-		}
-		qtextSpd += 50;
-		if (currTime - qtextSpd >= 0x7FFFFFFF) {
 			break;
 		}
 	}

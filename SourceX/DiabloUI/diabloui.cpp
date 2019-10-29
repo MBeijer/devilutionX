@@ -54,9 +54,9 @@ struct {
 
 void UiDestroy()
 {
-	DUMMY();
 	ArtHero.Unload();
 	UnloadTtfFont();
+	UnloadArtFonts();
 }
 
 void UiInitList(int min, int max, void (*fnFocus)(int value), void (*fnSelect)(int value), void (*fnEsc)(), UiItem *items, int itemCnt, bool itemsWraps, bool (*fnYesNo)())
@@ -246,8 +246,9 @@ bool UiFocusNavigation(SDL_Event *event)
 					char *clipboard = SDL_GetClipboardText();
 					if (clipboard == NULL) {
 						SDL_Log(SDL_GetError());
+					} else {
+						selhero_CatToName(clipboard, UiTextInput, UiTextInputLen);
 					}
-					selhero_CatToName(clipboard, UiTextInput, UiTextInputLen);
 				}
 				return true;
 #endif
@@ -354,7 +355,7 @@ void UiInitialize()
 	LoadArtFonts();
 	if (ArtCursor.surface != nullptr) {
 		if (SDL_ShowCursor(SDL_DISABLE) <= -1) {
-			SDL_Log(SDL_GetError());
+			ErrSdl();
 		}
 	}
 }
@@ -369,7 +370,6 @@ char connect_plrinfostr[128];
 char connect_categorystr[128];
 void UiSetupPlayerInfo(char *infostr, _uiheroinfo *pInfo, DWORD type)
 {
-	DUMMY();
 	SStrCopy(connect_plrinfostr, infostr, 128);
 	char format[32] = "";
 	strncpy(format, (char *)&type, 4);
@@ -489,7 +489,7 @@ int GetCenterOffset(int w, int bw)
 	return (bw - w) / 2;
 }
 
-void LoadBackgroundArt(char *pszFile)
+void LoadBackgroundArt(const char *pszFile)
 {
 	PALETTEENTRY pPal[256];
 

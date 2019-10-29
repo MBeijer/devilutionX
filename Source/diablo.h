@@ -5,7 +5,11 @@
 
 #ifdef USE_SDL1
 #include "sdl2_to_1_2_backports.h"
+#else
+#include "sdl2_backports.h"
 #endif
+
+#include "sdl_compat.h"
 
 #include "../types.h"
 
@@ -96,7 +100,7 @@ extern DWORD glSeedTbl[NUMLEVELS];
 extern BOOL gbRunGame;
 extern int glMid3Seed[NUMLEVELS];
 extern BOOL gbRunGameResult;
-extern int zoomflag;
+extern BOOL zoomflag;
 extern BOOL gbProcessPlayers;
 extern int glEndSeed[NUMLEVELS];
 extern BOOL gbLoadGame;
@@ -167,11 +171,11 @@ extern int dbgplr;
 extern int dbgqst;
 extern int dbgmon;
 extern int arrowdebug;
+#endif
 extern int frameflag;
 extern int frameend;
 extern int framerate;
 extern int framestart;
-#endif
 extern BOOL FriendlyMode;
 extern char *spszMsgTbl[4];
 extern char *spszMsgHotKeyTbl[4];

@@ -3,7 +3,7 @@
 #define __APPFAT_H__
 
 extern char sz_error_buf[256];
-extern int terminating;
+extern BOOL terminating;
 extern int cleanup_thread_id;
 
 void TriggerBreak();
@@ -22,7 +22,7 @@ void assert_fail(int nLineNo, const char *pszFile, const char *pszFail);
 void DDErrMsg(DWORD error_code, int log_line_nr, char *log_file_path);
 void DSErrMsg(DWORD error_code, int log_line_nr, char *log_file_path);
 void center_window(HWND hDlg);
-void ErrDlg(char *title, char *error, char *log_file_path, int log_line_nr);
+void ErrDlg(const char *title, const char *error, char *log_file_path, int log_line_nr);
 BOOL __stdcall FuncDlg(HWND hDlg, UINT uMsg, WPARAM wParam, char *text);
 void TextDlg(HWND hDlg, char *text);
 void FileErrDlg(const char *error);

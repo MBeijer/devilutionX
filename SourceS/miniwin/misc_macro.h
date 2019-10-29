@@ -29,8 +29,6 @@
 #define THREAD_PRIORITY_HIGHEST THREAD_BASE_PRIORITY_MAX
 #define THREAD_PRIORITY_ABOVE_NORMAL (THREAD_PRIORITY_HIGHEST - 1)
 
-#define TextOut TextOutA
-
 #define NUMRESERVED 106
 
 #define _snprintf snprintf
@@ -71,10 +69,6 @@
 #define IMAGE_DOS_SIGNATURE 0x5A4D
 #define VER_PLATFORM_WIN32_NT DVL_VER_PLATFORM_WIN32_NT
 
-#define GetVersionEx GetVersionExA
-
-#define lstrcpyn lstrcpynA
-
 #define MEM_COMMIT 0x1000
 #define MEM_RELEASE 0x8000
 
@@ -97,21 +91,16 @@
 #define KEY_WRITE 0x20006
 #define REG_SZ 1
 
-#define DefWindowProc DefWindowProcA
-
 #define GetFileAttributes GetFileAttributesA
 #define SetFileAttributes SetFileAttributesA
 #define FindFirstFile FindFirstFileA
 #define CreateFile CreateFileA
-#define GetDriveType GetDriveTypeA
 #define GetComputerName GetComputerNameA
 #define DeleteFile DeleteFileA
 
 #define GWL_STYLE (-16)
 
 #define WS_SYSMENU 0x00080000L
-
-#define DRIVE_CDROM DVL_DRIVE_CDROM
 
 //
 // Events
@@ -201,6 +190,7 @@
 #define WM_CREATE DVL_WM_CREATE
 #define WM_PAINT DVL_WM_PAINT
 #define WM_CLOSE DVL_WM_CLOSE
+#define WM_QUERYENDSESSION DVL_WM_QUERYENDSESSION
 #define WM_ERASEBKGND DVL_WM_ERASEBKGND
 #define WM_SYSKEYUP DVL_WM_SYSKEYUP
 #define WM_QUERYNEWPALETTE DVL_WM_QUERYNEWPALETTE

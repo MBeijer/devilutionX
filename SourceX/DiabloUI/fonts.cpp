@@ -8,7 +8,7 @@ Art ArtFonts[4][2];
 
 namespace {
 
-void LoadArtFont(char *pszFile, int size, int color)
+void LoadArtFont(const char *pszFile, int size, int color)
 {
 	LoadMaskedArt(pszFile, &ArtFonts[size][color], 256, 32);
 }
@@ -58,7 +58,7 @@ void LoadTtfFont() {
 		atexit(TTF_Quit);
 	}
 
-	font = TTF_OpenFont("CharisSILB.ttf", 17);
+	font = TTF_OpenFont(TTF_FONT_PATH, 17);
 	if (font == NULL) {
 		printf("TTF_OpenFont: %s\n", TTF_GetError());
 		return;

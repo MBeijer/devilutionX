@@ -186,13 +186,11 @@ WINBOOL WINAPI CloseHandle(HANDLE hObject);
 HANDLE WINAPI CreateEventA(LPSECURITY_ATTRIBUTES lpEventAttributes, WINBOOL bManualReset, WINBOOL bInitialState,
     LPCSTR lpName);
 BOOL CloseEvent(HANDLE event);
-BOOL WINAPI SetEvent(HANDLE hEvent);
-BOOL WINAPI ResetEvent(HANDLE hEvent);
+void SetEvent(HANDLE hEvent);
+void ResetEvent(HANDLE hEvent);
 int WINAPI WaitForSingleObject(HANDLE hHandle, DWORD dwMilliseconds);
 
 WINBOOL WINAPI SetCursorPos(int X, int Y);
-HWND WINAPI SetCapture(HWND hWnd);
-WINBOOL WINAPI ReleaseCapture();
 
 SHORT WINAPI GetAsyncKeyState(int vKey);
 
@@ -214,18 +212,11 @@ DWORD WINAPI GetCurrentThreadId();
 WINBOOL WINAPI SetThreadPriority(HANDLE hThread, int nPriority);
 void WINAPI Sleep(DWORD dwMilliseconds);
 
-WINBOOL WINAPI TextOutA(HDC hdc, int x, int y, LPCSTR lpString, int c);
-
-int WINAPI GetDeviceCaps(HDC hdc, int index);
-UINT WINAPI GetSystemPaletteEntries(HDC hdc, UINT iStart, UINT cEntries, LPPALETTEENTRY pPalEntries);
-
 int WINAPIV wsprintfA(LPSTR, LPCSTR, ...);
 int WINAPIV wvsprintfA(LPSTR dest, LPCSTR format, va_list arglist);
 int __cdecl _strcmpi(const char *_Str1, const char *_Str2);
 int __cdecl _strnicmp(const char *_Str1, const char *_Str2, size_t n);
 char *__cdecl _itoa(int _Value, char *_Dest, int _Radix);
-
-char *__cdecl _strlwr(char *str);
 
 //
 // File I/O
@@ -344,13 +335,7 @@ typedef struct _IMAGE_SECTION_HEADER {
 	DWORD Characteristics;
 } IMAGE_SECTION_HEADER, *PIMAGE_SECTION_HEADER;
 
-BOOL GetVersionExA(LPOSVERSIONINFOA lpVersionInformation);
-
-void lstrcpynA(LPSTR lpString1, LPCSTR lpString2, int iMaxLength);
-
 typedef LONG LSTATUS, HKEY, REGSAM, PHKEY;
-
-LRESULT DefWindowProcA(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam);
 
 WINBOOL WINAPI WriteFile(HANDLE hFile, LPCVOID lpBuffer, DWORD nNumberOfBytesToWrite, LPDWORD lpNumberOfBytesWritten,
     LPOVERLAPPED lpOverlapped);
@@ -367,7 +352,6 @@ HANDLE WINAPI CreateFileA(LPCSTR lpFileName, DWORD dwDesiredAccess, DWORD dwShar
 WINBOOL WINAPI ReadFile(HANDLE hFile, LPVOID lpBuffer, DWORD nNumberOfBytesToRead, LPDWORD lpNumberOfBytesRead,
     LPOVERLAPPED lpOverlapped);
 DWORD WINAPI GetFileSize(HANDLE hFile, LPDWORD lpFileSizeHigh);
-UINT GetDriveTypeA(LPCSTR lpRootPathName);
 WINBOOL WINAPI GetComputerNameA(LPSTR lpBuffer, LPDWORD nSize);
 WINBOOL WINAPI DeleteFileA(LPCSTR lpFileName);
 
@@ -488,7 +472,6 @@ extern void DrawArtWithMask(int SX, int SY, int SW, int SH, int nFrame, BYTE bMa
 extern BOOL __cdecl LoadArtWithPal(char *pszFile, void **pBuffer, int frames, DWORD *data);
 
 constexpr auto DVL_WM_SYSKEYUP = 0x0105;
-constexpr auto DVL_DRIVE_CDROM = 5;
 constexpr auto DVL_VER_PLATFORM_WIN32_NT = 2;
 
 constexpr auto DVL_CREATE_ALWAYS = 2;
