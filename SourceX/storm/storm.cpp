@@ -623,9 +623,6 @@ void SVidPlayBegin(char *filename, int a2, int a3, int a4, int a5, int flags, HA
 	if (SVidPalette == NULL) {
 		ErrSdl();
 	}
-#if defined(USE_SDL1) && D_BPP == 8
-		SDL_SetColors(surface, SVidPalette->colors, 0, SVidPalette->ncolors);
-#endif
 	if (SDLC_SetSurfaceColors(SVidSurface, SVidPalette) <= -1) {
 		ErrSdl();
 	}
@@ -673,9 +670,6 @@ BOOL SVidPlayContinue(void)
 			SDL_Log(SDL_GetError());
 			return false;
 		}
-#if defined(USE_SDL1) && D_BPP == 8
-		SDL_SetColors(surface, SVidPalette->colors, 0, SVidPalette->ncolors);
-#endif
 	}
 
 	if (SDL_GetTicks() * 1000 >= SVidFrameEnd) {

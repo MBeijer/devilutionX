@@ -1,6 +1,12 @@
 // Compatibility wrappers for SDL 1 & 2.
 #include <SDL.h>
 
+#if defined(__AMIGA__) // Add other systems that require an 8bit screen here
+#define D_BPP 8
+#else
+#define D_BPP 0
+#endif
+
 inline int SDLC_SetColorKey(SDL_Surface *surface, Uint32 key)
 {
 #ifdef USE_SDL1
@@ -14,6 +20,11 @@ inline int SDLC_SetColorKey(SDL_Surface *surface, Uint32 key)
 inline int SDLC_SetSurfaceColors(SDL_Surface *surface, SDL_Color *colors, int firstcolor, int ncolors)
 {
 #ifdef USE_SDL1
+	#if D_BPP == 8
+		// In SDL1, if the Video Surface is 8bit, you need to set this as well to match,
+		// otherwise colors will be wrong!
+		SDL_SetColors(SDL_GetVideoSurface(), colors, firstcolor, ncolors);
+	#endif
 	return SDL_SetPalette(surface, SDL_LOGPAL, colors, firstcolor, ncolors) - 1;
 #else
 	return SDL_SetPaletteColors(surface->format->palette, colors, firstcolor, ncolors);
@@ -38,7 +49,7 @@ inline int SDLC_SetSurfaceAndPaletteColors(SDL_Surface *surface, SDL_Palette *pa
 	}
 	if (colors != (palette->colors + firstcolor))
 		SDL_memcpy(palette->colors + firstcolor, colors, ncolors * sizeof(*colors));
-	
+
 	#if D_BPP == 8
 		// In SDL1, if the Video Surface is 8bit, you need to set this as well to match,
 		// otherwise colors will be wrong!
