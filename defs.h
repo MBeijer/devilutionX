@@ -146,7 +146,7 @@
 {						\
 	void *p__p;			\
 	p__p = p;			\
-	p = NULL; \
+	p = NULL;			\
 	mem_free_dbg(p__p);	\
 }
 

@@ -27,7 +27,6 @@ void SDrawUpdatePalette(unsigned int firstentry, unsigned int numentries, PALETT
 	if (SDLC_SetSurfaceAndPaletteColors(pal_surface, palette, colors, firstentry, numentries) <= -1) {
 		ErrSdl();
 	}
-
 	pal_surface_palette_version++;
 }
 
