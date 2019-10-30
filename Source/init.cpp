@@ -86,7 +86,7 @@ void init_archives()
 #endif
 }
 
-#if defined(__BIG_ENDIAN__)
+#if defined(__AMIGA__)
 #define MPQ_FLAG_READ_ONLY 0
 #endif
 
@@ -101,10 +101,10 @@ HANDLE init_test_access(char *mpq_path, char *mpq_name, char *reg_loc, int dwPri
 
 	for (int i = 0; i < 2; i++) {
 		snprintf(mpq_path, MAX_PATH, "%s%s", Buffer[i], mpq_name);
-		
 		if (SFileOpenArchive(mpq_path, dwPriority, MPQ_FLAG_READ_ONLY, &archive)) {
 			SFileSetBasePath(Buffer[i]);
 			return archive;
+
 		}
 	}
 

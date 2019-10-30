@@ -305,7 +305,7 @@ static void DrawPlayer(int pnum, int x, int y, int px, int py, BYTE *pCelBuff, i
 
 	if (dFlags[x][y] & BFLAG_LIT || plr[myplr]._pInfraFlag || !setlevel && !currlevel) {
 		if (!pCelBuff) {
-			// app_fatal("Drawing player %d \"%s\" clipped: NULL Cel Buffer", pnum, plr[pnum]._pName);
+			// app_fatal("Drawing player %d \"%s\": NULL Cel Buffer", pnum, plr[pnum]._pName);
 			return;
 		}
 		frames = SDL_SwapLE32(*(DWORD *)pCelBuff);
@@ -315,7 +315,7 @@ static void DrawPlayer(int pnum, int x, int y, int px, int py, BYTE *pCelBuff, i
 			if(plr[pnum]._pmode <= PM_QUIT)
 				szMode = szPlrModeAssert[plr[pnum]._pmode];
 			app_fatal(
-				"Drawing player %d \"%s\" %s clipped: facing %d, frame %d of %d",
+				"Drawing player %d \"%s\" %s: facing %d, frame %d of %d",
 				pnum,
 				plr[pnum]._pName,
 				szMode,
@@ -439,7 +439,7 @@ static void DrawObject(int x, int y, int ox, int oy, BOOL pre)
 
 	pCelBuff = object[bv]._oAnimData;
 	if (!pCelBuff) {
-		// app_fatal("Draw Object type %d Clipped: NULL Cel Buffer", object[bv]._otype);
+		// app_fatal("Draw Object type %d: NULL Cel Buffer", object[bv]._otype);
 		return;
 	}
 

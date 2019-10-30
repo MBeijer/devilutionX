@@ -1,6 +1,6 @@
 #include "selhero.h"
 
-#include <iostream>
+#include <cwchar>
 #include <algorithm>
 
 #include "scrollbar.h"
