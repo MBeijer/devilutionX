@@ -139,7 +139,6 @@ bool SpawnWindow(LPCSTR lpWindowName, int nWidth, int nHeight)
 	int flags = SDL_SWSURFACE | SDL_HWPALETTE;
 	if (fullscreen)
 		flags |= SDL_FULLSCREEN;
-
 	SDL_WM_SetCaption(lpWindowName, WINDOW_ICON_NAME);
 	SDL_SetVideoMode(nWidth, nHeight, D_BPP, flags);
 	window = SDL_GetVideoSurface();
