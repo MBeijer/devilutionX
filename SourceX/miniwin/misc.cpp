@@ -137,7 +137,7 @@ bool SpawnWindow(LPCSTR lpWindowName, int nWidth, int nHeight)
 
 #ifdef USE_SDL1
 	int flags = SDL_SWSURFACE | SDL_HWPALETTE;
-#ifndef AMIGA
+#ifndef __AMIGA__
 	flags |= SDL_DOUBLEBUF;
 #endif
 	if (fullscreen) {

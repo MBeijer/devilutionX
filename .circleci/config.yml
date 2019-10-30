@@ -65,7 +65,7 @@ jobs:
     steps:
       - checkout
       - run: Packaging/amiga/prep.sh
-      - run: cd build && PKG_CONFIG_PATH=/opt/m68k-amigaos/lib/pkgconfig/:/opt/m68k-amigaos/share/pkgconfig/ cmake -DM68K_CPU=68040 -DM68K_FPU=hard -DM68K_COMMON="-s -ffast-math -O3 -noixemul -DBIG_ENDIAN -DAMIGA -fpermissive -fbbb=abcdef" ..
+      - run: cd build && PKG_CONFIG_PATH=/opt/m68k-amigaos/lib/pkgconfig/:/opt/m68k-amigaos/share/pkgconfig/ cmake -DM68K_CPU=68040 -DM68K_FPU=hard -DM68K_COMMON="-s -ffast-math -O3 -noixemul -D__BIG_ENDIAN__ -D__AMIGA__ -fpermissive -fbbb=abcdef" ..
       - run: cd build && make -j$(nproc)
       - store_artifacts: {path: ./build/devilutionx, destination: devilutionx_m68k}
 
