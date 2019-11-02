@@ -70,7 +70,11 @@ void init_archives()
 #ifdef SPAWN
 		diabdat_mpq = init_test_access(diabdat_mpq_path, "spawn.mpq", "DiabloSpawn", 1000, FS_PC);
 #else
+#if defined(__AMIGA__)
+	diabdat_mpq = init_test_access(diabdat_mpq_path, "diabdat.mpq", "DiabloCD", 1000, FS_CD);
+#else
 	diabdat_mpq = init_test_access(diabdat_mpq_path, "\\diabdat.mpq", "DiabloCD", 1000, FS_CD);
+#endif
 #endif
 	if (!SFileOpenFile("ui_art\\title.pcx", &fh))
 #ifdef SPAWN
