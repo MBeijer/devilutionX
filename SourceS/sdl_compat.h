@@ -3,6 +3,28 @@
 
 #if defined(__AMIGA__) // Add other systems that require an 8bit screen here
 #define D_BPP 8
+
+short ac68080 = 0;
+
+extern "C"
+{
+
+#include <dos/dos.h>
+#include <exec/exec.h>
+
+extern struct ExecBase *SysBase;
+
+int is_vampire()
+{
+	if (SysBase->AttnFlags &(1 << 10)) {
+		printf("Vampire accelerator detected, using SAGA Direct Draw\n");
+		return 1;
+	}
+	else
+		return 0;
+}
+
+} //extern C
 #else
 #define D_BPP 0
 #endif
