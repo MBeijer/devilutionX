@@ -119,8 +119,10 @@ WINBOOL DeleteFileA(LPCSTR lpFileName)
 }
 
 bool SpawnWindow(LPCSTR lpWindowName, int nWidth, int nHeight)
-{
-	if (SDL_Init(SDL_INIT_EVERYTHING & ~SDL_INIT_HAPTIC) <= -1) {
+{	#if defined(WARPUP)
+	if (SDL_Init(SDL_INIT_EVERYTHING & ~(SDL_INIT_HAPTIC|SDL_INIT_CDROM)) <= -1) {
+	#else
+	if (SDL_Init(SDL_INIT_EVERYTHING & ~SDL_INIT_HAPTIC) <= -1) {	#endif
 		ErrSdl();
 	}
 
