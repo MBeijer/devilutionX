@@ -142,7 +142,8 @@
 #include <stdio.h>
 #include <stdarg.h>
 #include <string.h>
-#if defined(WARPUP)#include <strings.h>
+#if defined(WARPUP)
+#include <strings.h>
 #endif
 
 #include <ctype.h>
