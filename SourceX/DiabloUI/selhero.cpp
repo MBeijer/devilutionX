@@ -377,7 +377,7 @@ BOOL UiSelHeroMultDialog(
 	return UiSelHeroDialog(fninfo, fncreate, fnstats, fnremove, dlgresult, name);
 }
 
-#if 0 // Cowcat
+#if !defined(WARPUP) // Cowcat
 
 const char *selhero_GenerateName(std::uint8_t hero_class)
 {
@@ -419,12 +419,10 @@ const char *selhero_GenerateName(std::uint8_t hero_class)
 		    "Horazon",
 		}
 	};
-	// this does not compile ATM
 	const auto seed = std::chrono::system_clock::now().time_since_epoch().count();
 	std::default_random_engine generator(seed);
 	std::uniform_int_distribution<std::size_t> dist(0, sizeof(kNames[0]) / sizeof(kNames[0][0]) - 1);
 	return kNames[hero_class][dist(generator)];
-    //
 }
 #endif
 } // namespace dvl
