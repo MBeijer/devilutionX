@@ -1,5 +1,9 @@
 <<<<<<< HEAD
+<<<<<<< HEAD
 cmake_minimum_required(VERSION 3.10) # CMP0083 NEW
+=======
+cmake_minimum_required(VERSION 3.8) # CMP0083 NEW
+>>>>>>> Define fixes.
 
 include(CMake/out_of_tree.cmake)
 
@@ -20,12 +24,33 @@ option(NIGHTLY_BUILD "Enable options for nightly build" OFF)
 option(USE_SDL1 "Use SDL1.2 instead of SDL2" OFF)
 option(NONET "Disable network" OFF)
 
+<<<<<<< HEAD
+=======
+include(CMake/git.cmake)
+get_git_tag(GIT_TAG)
+if(NOT CMAKE_BUILD_TYPE MATCHES "Release")
+  get_git_commit_hash(GIT_COMMIT_HASH)
+endif()
+
+project(DevilutionX
+  VERSION ${GIT_TAG}
+  LANGUAGES C CXX)
+
+>>>>>>> Define fixes.
 if(BINARY_RELEASE)
   set(CMAKE_BUILD_TYPE "Release")
   set(ASAN OFF)
   set(UBSAN OFF)
   set(DEBUG OFF)
+<<<<<<< HEAD
   set(LTO ON)
+=======
+    if(AMIGA)
+      set(LTO OFF)
+    else()
+      set(LTO ON)
+    endif()
+>>>>>>> Define fixes.
   set(DIST ON)
   set(FASTER OFF)
 endif()
@@ -40,6 +65,7 @@ if(NIGHTLY_BUILD)
   set(FASTER OFF)
 endif()
 
+<<<<<<< HEAD
 include(CMake/git.cmake)
 get_git_tag(GIT_TAG)
 if(NOT CMAKE_BUILD_TYPE MATCHES "Release")
@@ -50,6 +76,8 @@ project(DevilutionX
   VERSION ${GIT_TAG}
   LANGUAGES C CXX)
 
+=======
+>>>>>>> Define fixes.
 if(LTO)
   # Use LTO on compilers where it is supported.
   include(CheckIPOSupported)
@@ -106,10 +134,23 @@ if(AMIGA)
   set(USE_SDL1 ON)
   find_package(Freetype REQUIRED)
   find_package(ZLIB REQUIRED)
+<<<<<<< HEAD
   # Enable exception suport as they are used in dvlnet code
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fexceptions")
   set(TTF_FONT_PATH \"LiberationSerif-Bold.ttf\")
   set(SDL1_VIDEO_MODE_BPP 8)
+=======
+  set(TTF_FONT_PATH \"LiberationSerif-Bold.ttf\")
+    if(NOT WARPOS)
+      # Enable exception suport as they are used in dvlnet code
+      set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fexceptions")
+      set(SDL1_VIDEO_MODE_BPP 8)
+    else()
+      set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O2 -ffast-math -noixemul")
+      set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O2 -ffast-math -noixemul")
+      set(SDL1_VIDEO_MODE_BPP 0)
+    endif()
+>>>>>>> Define fixes.
 endif()
 
 if(DIST)
@@ -287,15 +328,23 @@ set(devilutionx_SRCS
   SourceX/DiabloUI/selgame.cpp
   SourceX/DiabloUI/selhero.cpp
   SourceX/DiabloUI/selyesno.cpp
+<<<<<<< HEAD
   SourceX/DiabloUI/selok.cpp
+=======
+>>>>>>> Define fixes.
   SourceX/DiabloUI/text_draw.cpp
   SourceX/DiabloUI/text.cpp
   SourceX/DiabloUI/title.cpp
   SourceX/DiabloUI/ttf_render_wrapped.cpp
   SourceX/main.cpp
+<<<<<<< HEAD
   Packaging/macOS/AppIcon.icns
   Packaging/resources/CharisSILB.ttf
   Packaging/windows/devilutionx.rc)
+=======
+  ./Packaging/macOS/AppIcon.icns
+  ./Packaging/resources/CharisSILB.ttf)
+>>>>>>> Define fixes.
 
 if(NOT NONET)
   list(APPEND devilutionx_SRCS
@@ -314,7 +363,11 @@ if(SWITCH)
   set(BIN_TARGET devilutionx.elf)
 endif()
 
+<<<<<<< HEAD
 add_executable(${BIN_TARGET} WIN32 MACOSX_BUNDLE ${devilutionx_SRCS})
+=======
+add_executable(${BIN_TARGET} MACOSX_BUNDLE ${devilutionx_SRCS})
+>>>>>>> Define fixes.
 
 configure_file(SourceS/config.h.in config.h @ONLY)
 target_include_directories(devilution PUBLIC Source SourceS ${CMAKE_CURRENT_BINARY_DIR})
@@ -377,6 +430,10 @@ foreach(
   KBCTRL_BUTTON_LEFTSHOULDER
   KBCTRL_BUTTON_START
   KBCTRL_BUTTON_BACK
+<<<<<<< HEAD
+=======
+  KBCTRL_MODIFIER_KEY
+>>>>>>> Define fixes.
   KBCTRL_IGNORE_1
   JOY_AXIS_LEFTX
   JOY_AXIS_LEFTY
@@ -442,11 +499,23 @@ foreach(target devilution ${BIN_TARGET})
   endif()
 
   if(AMIGA)
+<<<<<<< HEAD
     target_link_libraries(${target} PRIVATE
       ${FREETYPE_LIBRARY}
       ${ZLIB_LIBRARY})
     if(NOT WARPOS)
       target_link_libraries(${target} PRIVATE -ldebug)
+=======
+    if(NOT WARPOS)
+      target_link_libraries(${target} PRIVATE
+      ${FREETYPE_LIBRARY}
+      ${ZLIB_LIBRARY})
+      target_link_libraries(${target} PRIVATE -ldebug)
+    else()
+      target_link_libraries(${target} PRIVATE
+      ${FREETYPE_LIBRARY}
+      ${ZLIB_LIBRARY} -woslibs)
+>>>>>>> Define fixes.
     endif()
   endif()
 
@@ -551,6 +620,7 @@ endif()
 if(RETROFW OR RG350)
   set_target_properties(${BIN_TARGET} PROPERTIES OUTPUT_NAME "devilutionx.dge")
 endif()
+<<<<<<< HEAD
 =======
 cmake_minimum_required(VERSION 3.8) # CMP0083 NEW
 
@@ -1118,3 +1188,5 @@ if(RETROFW OR RG350)
   set_target_properties(${BIN_TARGET} PROPERTIES OUTPUT_NAME "devilutionx.dge")
 endif()
 >>>>>>> Warpos source modifications.
+=======
+>>>>>>> Define fixes.
