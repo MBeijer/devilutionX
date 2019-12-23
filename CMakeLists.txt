@@ -33,7 +33,7 @@ if(BINARY_RELEASE)
   set(CMAKE_BUILD_TYPE "Release")
   set(ASAN OFF)
   set(UBSAN OFF)
-  set(DEBUG OFF)  
+  set(DEBUG OFF)
     if(AMIGA)
       set(LTO OFF)
     else()
@@ -110,7 +110,7 @@ if(AMIGA)
   find_package(Freetype REQUIRED)
   find_package(ZLIB REQUIRED)
   set(TTF_FONT_PATH \"LiberationSerif-Bold.ttf\")
-    if(NOT_WARPOS)
+    if(NOT WARPOS)
       # Enable exception suport as they are used in dvlnet code
       set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fexceptions")
       set(SDL1_VIDEO_MODE_BPP 8)
@@ -456,9 +456,9 @@ foreach(target devilution ${BIN_TARGET})
       ${ZLIB_LIBRARY})
       target_link_libraries(${target} PRIVATE -ldebug)
     else()
-       target_link_libraries(${target} PRIVATE
-       ${FREETYPE_LIBRARY}
-       ${ZLIB_LIBRARY} -woslibs)
+      target_link_libraries(${target} PRIVATE
+      ${FREETYPE_LIBRARY}
+      ${ZLIB_LIBRARY} -woslibs)
     endif()
   endif()
 
