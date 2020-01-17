@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.10) # CMP0083 NEW
+cmake_minimum_required(VERSION 3.8) # CMP0083 NEW
 
 include(CMake/out_of_tree.cmake)
 
@@ -24,7 +24,11 @@ if(BINARY_RELEASE)
   set(ASAN OFF)
   set(UBSAN OFF)
   set(DEBUG OFF)
-  set(LTO ON)
+    if(AMIGA)
+      set(LTO OFF)
+    else()
+      set(LTO ON)
+    endif()
   set(DIST ON)
   set(FASTER OFF)
 endif()
@@ -105,10 +109,16 @@ if(AMIGA)
   set(USE_SDL1 ON)
   find_package(Freetype REQUIRED)
   find_package(ZLIB REQUIRED)
-  # Enable exception suport as they are used in dvlnet code
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fexceptions")
   set(TTF_FONT_PATH \"LiberationSerif-Bold.ttf\")
-  set(SDL1_VIDEO_MODE_BPP 8)
+    if(NOT WARPOS)
+      # Enable exception suport as they are used in dvlnet code
+      set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fexceptions")
+      set(SDL1_VIDEO_MODE_BPP 8)
+    else()
+      set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O2 -ffast-math -noixemul")
+      set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O2 -ffast-math -noixemul")
+      set(SDL1_VIDEO_MODE_BPP 0)
+    endif()
 endif()
 
 if(DIST)
@@ -441,11 +451,15 @@ foreach(target devilution ${BIN_TARGET})
   endif()
 
   if(AMIGA)
-    target_link_libraries(${target} PRIVATE
+    if(NOT WARPOS)
+      target_link_libraries(${target} PRIVATE
       ${FREETYPE_LIBRARY}
       ${ZLIB_LIBRARY})
-    if(NOT WARPOS)
       target_link_libraries(${target} PRIVATE -ldebug)
+    else()
+      target_link_libraries(${target} PRIVATE
+      ${FREETYPE_LIBRARY}
+      ${ZLIB_LIBRARY} -woslibs)
     endif()
   endif()
 
