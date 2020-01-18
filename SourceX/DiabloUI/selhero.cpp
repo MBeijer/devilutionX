@@ -423,8 +423,7 @@ BOOL UiSelHeroMultDialog(
 	return UiSelHeroDialog(fninfo, fncreate, fnstats, fnremove, dlgresult, name);
 }
 
-#if !defined(WARPUP) // Cowcat
-
+#if !defined(WARPUP)
 const char *selhero_GenerateName(std::uint8_t hero_class)
 {
 	static const char *const kNames[3][10] = {

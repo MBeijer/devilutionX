@@ -1,4 +1,8 @@
-cmake_minimum_required(VERSION 3.8) # CMP0083 NEW
+if(NOT WARPOS AND NOT MORPHOS)
+  cmake_minimum_required(VERSION 3.10) # CMP0083 NEW
+else()
+  cmake_minimum_required(VERSION 3.8)
+endif()
 
 include(CMake/out_of_tree.cmake)
 
@@ -24,11 +28,7 @@ if(BINARY_RELEASE)
   set(ASAN OFF)
   set(UBSAN OFF)
   set(DEBUG OFF)
-    if(AMIGA)
-      set(LTO OFF)
-    else()
-      set(LTO ON)
-    endif()
+  set(LTO ON)
   set(DIST ON)
   set(FASTER OFF)
 endif()
@@ -110,15 +110,18 @@ if(AMIGA)
   find_package(Freetype REQUIRED)
   find_package(ZLIB REQUIRED)
   set(TTF_FONT_PATH \"LiberationSerif-Bold.ttf\")
-    if(NOT WARPOS)
-      # Enable exception suport as they are used in dvlnet code
-      set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fexceptions")
-      set(SDL1_VIDEO_MODE_BPP 8)
-    else()
-      set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O2 -ffast-math -noixemul")
-      set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O2 -ffast-math -noixemul")
-      set(SDL1_VIDEO_MODE_BPP 0)
-    endif()
+  if(NOT WARPOS)
+  # Enable exception suport as they are used in dvlnet code
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fexceptions")
+  set(SDL1_VIDEO_MODE_BPP 8)
+  else()
+  set(FASTER OFF)
+  set(DEBUG OFF)
+  set(DIST ON)
+  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -mcpu=603e -O3 -ffast-math -noixemul -D_POSIX_THREADS -DNDEBUG")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mcpu=603e -O3 -ffast-math -noixemul -fpermissive -D_POSIX_THREADS -DNDEBUG")
+  set(SDL1_VIDEO_MODE_BPP 0)
+  endif()
 endif()
 
 if(DIST)
@@ -451,15 +454,11 @@ foreach(target devilution ${BIN_TARGET})
   endif()
 
   if(AMIGA)
-    if(NOT WARPOS)
-      target_link_libraries(${target} PRIVATE
+    target_link_libraries(${target} PRIVATE
       ${FREETYPE_LIBRARY}
       ${ZLIB_LIBRARY})
+    if(NOT WARPOS)
       target_link_libraries(${target} PRIVATE -ldebug)
-    else()
-      target_link_libraries(${target} PRIVATE
-      ${FREETYPE_LIBRARY}
-      ${ZLIB_LIBRARY} -woslibs)
     endif()
   endif()
 
@@ -467,7 +466,11 @@ foreach(target devilution ${BIN_TARGET})
 endforeach(target)
 
 if(DIST AND CMAKE_CXX_COMPILER_ID MATCHES "GNU")
+  if(WARPOS)
+  target_link_libraries(${BIN_TARGET} PUBLIC -woslibs -lpthreads)
+  else()
   target_link_libraries(${BIN_TARGET} PUBLIC -static-libgcc -static-libstdc++)
+  endif()
 endif()
 
 if(WIN32)

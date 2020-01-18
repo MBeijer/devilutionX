@@ -125,8 +125,10 @@ WINBOOL SetFileAttributesA(LPCSTR lpFileName, DWORD dwFileAttributes)
 
 void ShowOutOfDiskError()
 {
+	#if !defined(WARPUP)
 	char *text = "Failed to save, please free some disk space and try again.";
 	UiErrorOkDialog("Out of Disk Space", text);
+	#endif
 }
 
 WINBOOL CloseHandle(HANDLE hObject)

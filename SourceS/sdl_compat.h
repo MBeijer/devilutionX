@@ -13,7 +13,7 @@
 #define SDLC_KEYSTATE_LEFT SDL_SCANCODE_LEFT
 #define SDLC_KEYSTATE_RIGHT SDL_SCANCODE_RIGHT
 #else
-#if defined(__AMIGA__) && !defined(__PPC__) // Add other systems that require an 8bit screen here
+#if defined(__AMIGA__) && defined(__M68K__) // Add other systems that require an 8bit screen here
 
 short ac68080 = 0;
 

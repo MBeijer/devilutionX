@@ -5,7 +5,7 @@
 
 namespace dvl {
 
-#if defined (__AMIGA__) && !defined(__PPC__)
+#if defined (__AMIGA__) && defined(__M68K__)
 Uint32 old_buffer;
 #endif
 
@@ -70,7 +70,7 @@ void dx_init(HWND hWnd)
 	SDL_RaiseWindow(window);
 	SDL_ShowWindow(window);
 
-#if defined (__AMIGA__) && !defined(__PPC__)
+#if defined (__AMIGA__) && defined(__M68K__)
 	ac68080 = is_vampire();
 #endif
 	dx_create_primary_surface();
@@ -225,7 +225,7 @@ void LimitFrameRate()
 void RenderPresent()
 {
 	SDL_Surface *surface = GetOutputSurface();
-#if defined (__AMIGA__) && !defined(__PPC__)
+#if defined (__AMIGA__) && defined(__M68K__)
 	if (ac68080)	{
 		old_buffer = surface->pixels;
 		surface->pixels = (void*)(~31 & (31+(Uint32)old_buffer));
@@ -264,7 +264,7 @@ void RenderPresent()
 		LimitFrameRate();
 	}
 #else
-#if defined (__AMIGA__) && !defined(__PPC__)
+#if defined (__AMIGA__) && defined(__M68K__)
 	if (ac68080)
 		*(volatile Uint32 *) 0xDFF1EC = (Uint32)surface->pixels;
 	else

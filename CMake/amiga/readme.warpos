@@ -1,5 +1,4 @@
 
-Warpos test version without 8 bit screenmode hardcoded.
 
 How to compile:
 
@@ -7,6 +6,8 @@ How to compile:
   
     Cmake requires some link libs to be copied from /gg/ppc-warpos/newlib/lib/ to /gg/ppc-warpos/lib/ ( SDL, SLD_*, freetype, etc ).
 
-    cd to build/  and call cmake with "cmake .. -DBINARY_RELEASE=ON -DCMAKE_TOOLCHAIN_FILE=CMake/amiga/ppc-warpos.cmake"
+    cd to build/  and call cmake with "cmake .. -DWARPOS=ON -DCMAKE_TOOLCHAIN_FILE=CMake/amiga/ppc-warpos.cmake"
+	
+	To compile for 8 bit screenmode, change SDL1_VIDEO_MODE_BPP to 8 (CMakeLists.txt)
     
 	

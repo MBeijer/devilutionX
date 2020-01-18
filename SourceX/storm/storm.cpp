@@ -14,6 +14,10 @@
 
 #include "DiabloUI/diabloui.h"
 
+#if defined(__MORPHOS__)
+#undef Enqueue
+#endif
+
 namespace dvl {
 
 std::string basePath;
@@ -539,7 +543,7 @@ void SVidPlayBegin(char *filename, int a2, int a3, int a4, int a5, int flags, HA
 	if (SVidSMK == NULL) {
 		return;
 	}
-
+	
 	unsigned char channels[7], depth[7];
 	unsigned long rate[7];
 	smk_info_audio(SVidSMK, NULL, channels, depth, rate);
@@ -568,7 +572,7 @@ void SVidPlayBegin(char *filename, int a2, int a3, int a4, int a5, int flags, HA
 		SDL_PauseAudio(0);
 #endif
 	}
-
+	
 	unsigned long nFrames;
 	smk_info_all(SVidSMK, NULL, &nFrames, &SVidFrameLength);
 	smk_info_video(SVidSMK, &SVidWidth, &SVidHeight, NULL);

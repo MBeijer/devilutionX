@@ -9,6 +9,12 @@
 #include <math.h>
 #include <cstddef>
 
+#if defined(__MORPHOS__) && !defined(WARPUP)
+#define SDL_snprintf snprintf
+#define SDL_getenv getenv
+#define SDL_strlcpy strlcpy
+#endif
+
 #include "../SourceX/stubs.h"
 
 #define WINDOW_ICON_NAME 0
